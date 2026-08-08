@@ -274,12 +274,38 @@ CF_MC_ID=""
 CF_FABRIC_ID=""
 CF_NEOFORGE_ID=""
 CF_CLIENT_ID=""
+CF_VERSION_TYPES_AVAILABLE=false
+
+describe_cf_candidates() {
+  local name="$1"
+  local candidates referenced_type_ids referenced_types
+
+  candidates="$(jq -cer --arg name "$name" \
+    '[.[] | select(.name == $name) | {id, gameVersionTypeID, name, slug}] | unique_by(.id)' \
+    "$ECHO_WORK/curseforge-game-versions.json")"
+
+  if $CF_VERSION_TYPES_AVAILABLE; then
+    referenced_type_ids="$(jq -c --arg name "$name" \
+      '[.[] | select(.name == $name) | .gameVersionTypeID] | unique' \
+      "$ECHO_WORK/curseforge-game-versions.json")"
+    referenced_types="$(jq -cer --argjson ids "$referenced_type_ids" \
+      '[.[] | select(.id as $id | ($ids | index($id)) != null) | {id, name, slug}] | unique_by(.id)' \
+      "$ECHO_WORK/curseforge-version-types.json")"
+  else
+    referenced_types='unavailable'
+  fi
+
+  printf 'candidates=%s; referencedVersionTypes=%s' "$candidates" "$referenced_types"
+}
 
 resolve_cf_id() {
   local name="$1"
-  local count
+  local count diagnostic
   count="$(jq --arg name "$name" '[.[] | select(.name == $name) | .id] | unique | length' "$ECHO_WORK/curseforge-game-versions.json")"
-  [[ "$count" == "1" ]] || fail "Expected exactly one CurseForge game-version ID for ${name}, found ${count}"
+  if [[ "$count" != "1" ]]; then
+    diagnostic="$(describe_cf_candidates "$name")"
+    fail "Expected exactly one CurseForge game-version ID for ${name}, found ${count}; ${diagnostic}"
+  fi
   jq -er --arg name "$name" '[.[] | select(.name == $name) | .id] | unique | .[0]' "$ECHO_WORK/curseforge-game-versions.json"
 }
 
@@ -299,6 +325,20 @@ if $need_curseforge; then
     "$CF_API/game/versions" \
     -o "$ECHO_WORK/curseforge-game-versions.json"
   jq -e 'type == "array"' "$ECHO_WORK/curseforge-game-versions.json" >/dev/null || fail "Unexpected CurseForge game-versions response"
+
+  if curl -fsSL --retry 3 \
+    -H "X-Api-Token: ${CURSEFORGE_TOKEN}" \
+    -H "Accept: application/json" \
+    "$CF_API/game/version-types" \
+    -o "$ECHO_WORK/curseforge-version-types.json"; then
+    if jq -e 'type == "array"' "$ECHO_WORK/curseforge-version-types.json" >/dev/null; then
+      CF_VERSION_TYPES_AVAILABLE=true
+    else
+      echo "::warning::CurseForge version-types response was not an array; ambiguous candidates will include type IDs only." >&2
+    fi
+  else
+    echo "::warning::CurseForge version-types endpoint was unavailable; ambiguous candidates will include type IDs only." >&2
+  fi
 
   CF_MC_ID="$(resolve_cf_id "$GAME_VERSION")"
   CF_FABRIC_ID="$(resolve_cf_id 'Fabric')"
