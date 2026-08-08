@@ -274,39 +274,54 @@ CF_MC_ID=""
 CF_FABRIC_ID=""
 CF_NEOFORGE_ID=""
 CF_CLIENT_ID=""
-CF_VERSION_TYPES_AVAILABLE=false
 
-describe_cf_candidates() {
-  local name="$1"
-  local candidates referenced_type_ids referenced_types
-
-  candidates="$(jq -cer --arg name "$name" \
-    '[.[] | select(.name == $name) | {id, gameVersionTypeID, name, slug}] | unique_by(.id)' \
-    "$ECHO_WORK/curseforge-game-versions.json")"
-
-  if $CF_VERSION_TYPES_AVAILABLE; then
-    referenced_type_ids="$(jq -c --arg name "$name" \
-      '[.[] | select(.name == $name) | .gameVersionTypeID] | unique' \
-      "$ECHO_WORK/curseforge-game-versions.json")"
-    referenced_types="$(jq -cer --argjson ids "$referenced_type_ids" \
-      '[.[] | select(.id as $id | ($ids | index($id)) != null) | {id, name, slug}] | unique_by(.id)' \
-      "$ECHO_WORK/curseforge-version-types.json")"
-  else
-    referenced_types='unavailable'
-  fi
-
-  printf 'candidates=%s; referencedVersionTypes=%s' "$candidates" "$referenced_types"
+describe_cf_targets() {
+  jq -ncer \
+    --slurpfile versions "$ECHO_WORK/curseforge-game-versions.json" \
+    --slurpfile types "$ECHO_WORK/curseforge-version-types.json" \
+    --argjson names '["1.21.1", "Fabric", "NeoForge", "Client"]' '
+      (reduce $types[0][] as $type ({};
+        .[($type.id | tostring)] = {name: $type.name, slug: $type.slug})) as $types_by_id
+      | [$versions[0][]
+         | select(.name as $name | $names | index($name))
+         | {
+             versionId: .id,
+             versionName: .name,
+             versionSlug: .slug,
+             typeId: .gameVersionTypeID,
+             type: ($types_by_id[(.gameVersionTypeID | tostring)] // null)
+           }]
+      | sort_by(.versionName, .typeId, .versionId)'
 }
 
-resolve_cf_id() {
-  local name="$1"
+resolve_cf_type_id() {
+  local slug="$1"
   local count diagnostic
-  count="$(jq --arg name "$name" '[.[] | select(.name == $name) | .id] | unique | length' "$ECHO_WORK/curseforge-game-versions.json")"
+
+  count="$(jq --arg slug "$slug" '[.[] | select(.slug == $slug) | .id] | unique | length' "$ECHO_WORK/curseforge-version-types.json")"
   if [[ "$count" != "1" ]]; then
-    diagnostic="$(describe_cf_candidates "$name")"
-    fail "Expected exactly one CurseForge game-version ID for ${name}, found ${count}; ${diagnostic}"
+    diagnostic="$(describe_cf_targets)"
+    fail "Expected exactly one CurseForge version type with slug ${slug}, found ${count}; targets=${diagnostic}"
   fi
-  jq -er --arg name "$name" '[.[] | select(.name == $name) | .id] | unique | .[0]' "$ECHO_WORK/curseforge-game-versions.json"
+  jq -er --arg slug "$slug" '[.[] | select(.slug == $slug) | .id] | unique | .[0]' "$ECHO_WORK/curseforge-version-types.json"
+}
+
+resolve_cf_version_id() {
+  local name="$1"
+  local slug="$2"
+  local type_id="$3"
+  local count diagnostic
+
+  count="$(jq --arg name "$name" --arg slug "$slug" --argjson type_id "$type_id" \
+    '[.[] | select(.name == $name and .slug == $slug and .gameVersionTypeID == $type_id) | .id] | unique | length' \
+    "$ECHO_WORK/curseforge-game-versions.json")"
+  if [[ "$count" != "1" ]]; then
+    diagnostic="$(describe_cf_targets)"
+    fail "Expected exactly one CurseForge version matching ${name}/${slug} in type ${type_id}, found ${count}; targets=${diagnostic}"
+  fi
+  jq -er --arg name "$name" --arg slug "$slug" --argjson type_id "$type_id" \
+    '[.[] | select(.name == $name and .slug == $slug and .gameVersionTypeID == $type_id) | .id] | unique | .[0]' \
+    "$ECHO_WORK/curseforge-game-versions.json"
 }
 
 if $need_curseforge; then
@@ -324,26 +339,49 @@ if $need_curseforge; then
     -H "Accept: application/json" \
     "$CF_API/game/versions" \
     -o "$ECHO_WORK/curseforge-game-versions.json"
-  jq -e 'type == "array"' "$ECHO_WORK/curseforge-game-versions.json" >/dev/null || fail "Unexpected CurseForge game-versions response"
+  jq -e '
+    type == "array" and length > 0 and
+    all(.[];
+      (.id | type) == "number" and .id > 0 and
+      (.gameVersionTypeID | type) == "number" and .gameVersionTypeID > 0 and
+      (.name | type) == "string" and (.name | length) > 0 and
+      (.slug | type) == "string" and (.slug | length) > 0) and
+    ((map(.id) | length) == (map(.id) | unique | length))' \
+    "$ECHO_WORK/curseforge-game-versions.json" >/dev/null || fail "Unexpected CurseForge game-versions response"
 
-  if curl -fsSL --retry 3 \
+  curl -fsSL --retry 3 \
     -H "X-Api-Token: ${CURSEFORGE_TOKEN}" \
     -H "Accept: application/json" \
     "$CF_API/game/version-types" \
-    -o "$ECHO_WORK/curseforge-version-types.json"; then
-    if jq -e 'type == "array"' "$ECHO_WORK/curseforge-version-types.json" >/dev/null; then
-      CF_VERSION_TYPES_AVAILABLE=true
-    else
-      echo "::warning::CurseForge version-types response was not an array; ambiguous candidates will include type IDs only." >&2
-    fi
-  else
-    echo "::warning::CurseForge version-types endpoint was unavailable; ambiguous candidates will include type IDs only." >&2
-  fi
+    -o "$ECHO_WORK/curseforge-version-types.json" || fail "CurseForge version-types endpoint is required for unambiguous publishing"
+  jq -e '
+    type == "array" and length > 0 and
+    all(.[];
+      (.id | type) == "number" and .id > 0 and
+      (.name | type) == "string" and (.name | length) > 0 and
+      (.slug | type) == "string" and (.slug | length) > 0) and
+    ((map(.id) | length) == (map(.id) | unique | length))' \
+    "$ECHO_WORK/curseforge-version-types.json" >/dev/null || fail "Unexpected CurseForge version-types response"
 
-  CF_MC_ID="$(resolve_cf_id "$GAME_VERSION")"
-  CF_FABRIC_ID="$(resolve_cf_id 'Fabric')"
-  CF_NEOFORGE_ID="$(resolve_cf_id 'NeoForge')"
-  CF_CLIENT_ID="$(resolve_cf_id 'Client')"
+  CF_MC_TYPE_ID="$(resolve_cf_type_id 'minecraft-1-21')"
+  CF_MODLOADER_TYPE_ID="$(resolve_cf_type_id 'modloader')"
+  CF_ENVIRONMENT_TYPE_ID="$(resolve_cf_type_id 'environment')"
+  jq -en \
+    --argjson minecraft "$CF_MC_TYPE_ID" \
+    --argjson modloader "$CF_MODLOADER_TYPE_ID" \
+    --argjson environment "$CF_ENVIRONMENT_TYPE_ID" \
+    '[$minecraft, $modloader, $environment] | length == (unique | length)' >/dev/null || fail "CurseForge semantic version types are not distinct"
+
+  CF_MC_ID="$(resolve_cf_version_id "$GAME_VERSION" '1-21-1' "$CF_MC_TYPE_ID")"
+  CF_FABRIC_ID="$(resolve_cf_version_id 'Fabric' 'fabric' "$CF_MODLOADER_TYPE_ID")"
+  CF_NEOFORGE_ID="$(resolve_cf_version_id 'NeoForge' 'neoforge' "$CF_MODLOADER_TYPE_ID")"
+  CF_CLIENT_ID="$(resolve_cf_version_id 'Client' 'client' "$CF_ENVIRONMENT_TYPE_ID")"
+  jq -en \
+    --argjson minecraft "$CF_MC_ID" \
+    --argjson fabric "$CF_FABRIC_ID" \
+    --argjson neoforge "$CF_NEOFORGE_ID" \
+    --argjson client "$CF_CLIENT_ID" \
+    '[$minecraft, $fabric, $neoforge, $client] | length == (unique | length)' >/dev/null || fail "CurseForge target version IDs are not distinct"
 fi
 
 modrinth_existing_version() {
@@ -438,7 +476,10 @@ fi
     echo "- Modrinth NeoForge: ${MR_NEOFORGE_PREFLIGHT}"
   fi
   if $need_curseforge; then
-    echo "- CurseForge: token and required 1.21.1/Fabric/NeoForge/Client tags verified; project upload permission requires the publish request"
+    echo "- CurseForge Minecraft: \`${GAME_VERSION}\` version ID \`${CF_MC_ID}\` (type \`minecraft-1-21\`, ID \`${CF_MC_TYPE_ID}\`)"
+    echo "- CurseForge loaders: Fabric \`${CF_FABRIC_ID}\`, NeoForge \`${CF_NEOFORGE_ID}\` (type \`modloader\`, ID \`${CF_MODLOADER_TYPE_ID}\`)"
+    echo "- CurseForge environment: Client \`${CF_CLIENT_ID}\` (type \`environment\`, ID \`${CF_ENVIRONMENT_TYPE_ID}\`)"
+    echo "- CurseForge: token and exact typed tags verified; project upload permission requires the publish request"
   fi
 } >> "$GITHUB_STEP_SUMMARY"
 
