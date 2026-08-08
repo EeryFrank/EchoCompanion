@@ -211,14 +211,19 @@ if $need_modrinth; then
     "$MR_API/project/$mr_project_path" \
     -o "$ECHO_WORK/modrinth-project.json"
 
-  jq -e \
+  if ! jq -e \
     '.project_type == "mod" and
      .title == "Echo Companion" and
      .license.id == "MIT" and
      .client_side == "required" and
      .server_side == "unsupported" and
      (.status == "draft" or .status == "approved")' \
-    "$ECHO_WORK/modrinth-project.json" >/dev/null || fail "Modrinth project metadata or status is not safe for publishing"
+    "$ECHO_WORK/modrinth-project.json" >/dev/null; then
+    project_summary="$(jq -cer \
+      '{title, project_type, license_id: .license.id, client_side, server_side, status, requested_status}' \
+      "$ECHO_WORK/modrinth-project.json")"
+    fail "Modrinth project metadata or status is not safe for publishing: ${project_summary}"
+  fi
 
   MR_PROJECT_RESOLVED_ID="$(jq -er '.id' "$ECHO_WORK/modrinth-project.json")"
   MR_PROJECT_SLUG="$(jq -er '.slug' "$ECHO_WORK/modrinth-project.json")"
