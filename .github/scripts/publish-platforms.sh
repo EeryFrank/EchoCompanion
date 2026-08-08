@@ -185,6 +185,9 @@ fi
 MR_PROJECT_RESOLVED_ID=""
 MR_PROJECT_SLUG=""
 MR_PROJECT_STATUS=""
+MR_PROJECT_NEEDS_INITIALIZATION=false
+MR_PROJECT_IS_EMPTY_PLACEHOLDER=false
+MR_PROJECT_PREFLIGHT_STATE="not requested"
 MR_VERSIONS_JSON="$ECHO_WORK/modrinth-versions.json"
 
 refresh_modrinth_versions() {
@@ -212,23 +215,59 @@ if $need_modrinth; then
     -o "$ECHO_WORK/modrinth-project.json"
 
   if ! jq -e \
-    '.project_type == "mod" and
-     .title == "Echo Companion" and
+    '.title == "Echo Companion" and
      .license.id == "MIT" and
-     .client_side == "required" and
-     .server_side == "unsupported" and
      (.status == "draft" or .status == "approved")' \
     "$ECHO_WORK/modrinth-project.json" >/dev/null; then
     project_summary="$(jq -cer \
-      '{title, project_type, license_id: .license.id, client_side, server_side, status, requested_status}' \
+      '{title, project_type, license_id: .license.id, client_side, server_side, status, requested_status, version_count: ((.versions // []) | length)}' \
       "$ECHO_WORK/modrinth-project.json")"
-    fail "Modrinth project metadata or status is not safe for publishing: ${project_summary}"
+    fail "Modrinth project identity or status is not safe for publishing: ${project_summary}"
+  fi
+
+  if jq -e \
+    '.project_type == "mod" and
+     .client_side == "required" and
+     .server_side == "unsupported"' \
+    "$ECHO_WORK/modrinth-project.json" >/dev/null; then
+    MR_PROJECT_PREFLIGHT_STATE="mod metadata ready"
+  elif jq -e \
+    '.project_type == "project" and
+     .client_side == "unknown" and
+     .server_side == "unknown" and
+     .status == "draft" and
+     ((.versions // []) | length) == 0' \
+    "$ECHO_WORK/modrinth-project.json" >/dev/null; then
+    MR_PROJECT_NEEDS_INITIALIZATION=true
+    MR_PROJECT_IS_EMPTY_PLACEHOLDER=true
+    MR_PROJECT_PREFLIGHT_STATE="empty draft placeholder; publish will set client/server support before uploading"
+  elif jq -e \
+    '.project_type == "project" and
+     .client_side == "required" and
+     .server_side == "unsupported" and
+     .status == "draft" and
+     ((.versions // []) | length) == 0' \
+    "$ECHO_WORK/modrinth-project.json" >/dev/null; then
+    MR_PROJECT_IS_EMPTY_PLACEHOLDER=true
+    MR_PROJECT_PREFLIGHT_STATE="initialized empty draft; ready to upload"
+  else
+    project_summary="$(jq -cer \
+      '{title, project_type, license_id: .license.id, client_side, server_side, status, requested_status, version_count: ((.versions // []) | length)}' \
+      "$ECHO_WORK/modrinth-project.json")"
+    fail "Modrinth project type or environment is not safe for publishing: ${project_summary}"
   fi
 
   MR_PROJECT_RESOLVED_ID="$(jq -er '.id' "$ECHO_WORK/modrinth-project.json")"
   MR_PROJECT_SLUG="$(jq -er '.slug' "$ECHO_WORK/modrinth-project.json")"
   MR_PROJECT_STATUS="$(jq -er '.status' "$ECHO_WORK/modrinth-project.json")"
+  if [[ "$INPUT_MODE" == "publish" ]]; then
+    require_value INPUT_MR_SLUG_CONFIRM "${INPUT_MR_SLUG_CONFIRM:-}"
+    [[ "$INPUT_MR_SLUG_CONFIRM" == "$MR_PROJECT_SLUG" ]] || fail "Modrinth slug confirmation does not match the configured project"
+  fi
   refresh_modrinth_versions
+  if $MR_PROJECT_IS_EMPTY_PLACEHOLDER; then
+    jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Empty Modrinth placeholder unexpectedly has versions"
+  fi
 fi
 
 CF_MC_ID=""
@@ -354,6 +393,7 @@ fi
   echo "- NeoForge: \`${NEOFORGE_FILE}\` (pinned SHA-256 and size verified)"
   if $need_modrinth; then
     echo "- Modrinth: \`${MR_PROJECT_SLUG}\` (status: \`${MR_PROJECT_STATUS}\`)"
+    echo "- Modrinth project state: ${MR_PROJECT_PREFLIGHT_STATE}"
     echo "- Modrinth Fabric: ${MR_FABRIC_PREFLIGHT}"
     echo "- Modrinth NeoForge: ${MR_NEOFORGE_PREFLIGHT}"
   fi
@@ -428,12 +468,70 @@ upload_modrinth_version() {
   jq -er '.id' "$response_file"
 }
 
+verify_modrinth_version_id() {
+  local loader="$1"
+  local filename="$2"
+  local sha512="$3"
+  local expected_id="$4"
+  local attempt actual_id existing_status
+
+  for attempt in 1 2 3; do
+    refresh_modrinth_versions
+    if actual_id="$(modrinth_existing_version "$loader" "$filename" "$sha512")"; then
+      [[ "$actual_id" == "$expected_id" ]] || fail "Modrinth ${loader} write verification returned an unexpected version ID"
+      return 0
+    else
+      existing_status=$?
+      [[ "$existing_status" == "10" ]] || return "$existing_status"
+    fi
+    sleep 2
+  done
+
+  fail "Modrinth ${loader} version was not visible after upload"
+}
+
 if $need_modrinth; then
   refresh_modrinth_versions
   modrinth_target_is_safe 'fabric' "$FABRIC_FILE" "$FABRIC_SHA512"
   modrinth_target_is_safe 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512"
+  if $MR_PROJECT_IS_EMPTY_PLACEHOLDER; then
+    jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Modrinth placeholder gained versions after preflight; refusing to continue"
+  fi
 
   mr_project_path="$(urlencode "$MR_PROJECT_RESOLVED_ID")"
+
+  if $MR_PROJECT_NEEDS_INITIALIZATION; then
+    initialize_http="$(curl -sS \
+      -o "$ECHO_WORK/modrinth-initialize-response.json" \
+      -w '%{http_code}' \
+      -X PATCH \
+      -H "Authorization: ${MODRINTH_TOKEN}" \
+      -H "User-Agent: ${MR_USER_AGENT}" \
+      -H "Content-Type: application/json" \
+      --data '{"client_side":"required","server_side":"unsupported"}' \
+      "$MR_API/project/$mr_project_path")"
+    [[ "$initialize_http" == "204" ]] || fail "Modrinth environment initialization failed (HTTP ${initialize_http})"
+
+    curl -fsSL --retry 3 \
+      -H "Authorization: ${MODRINTH_TOKEN}" \
+      -H "User-Agent: ${MR_USER_AGENT}" \
+      -H "Accept: application/json" \
+      "$MR_API/project/$mr_project_path" \
+      -o "$ECHO_WORK/modrinth-project-after-initialize.json"
+    jq -e \
+      '.title == "Echo Companion" and
+       .license.id == "MIT" and
+       (.project_type == "project" or .project_type == "mod") and
+       .client_side == "required" and
+       .server_side == "unsupported" and
+       .status == "draft" and
+       ((.versions // []) | length) == 0' \
+      "$ECHO_WORK/modrinth-project-after-initialize.json" >/dev/null || fail "Modrinth project did not retain the expected empty-project state after environment initialization"
+    refresh_modrinth_versions
+    jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Modrinth placeholder gained versions during initialization"
+    echo "Modrinth project environment initialized for a client-only mod."
+  fi
+
   icon_http="$(curl -sS \
     -o "$ECHO_WORK/modrinth-icon-response.json" \
     -w '%{http_code}' \
@@ -452,12 +550,24 @@ if $need_modrinth; then
   neoforge_version_id="$(upload_modrinth_version 'neoforge' 'NeoForge' "$NEOFORGE_PATH" "$NEOFORGE_FILE" "$NEOFORGE_SHA512")"
   echo "Modrinth NeoForge version ready: ${neoforge_version_id}"
 
+  verify_modrinth_version_id 'fabric' "$FABRIC_FILE" "$FABRIC_SHA512" "$fabric_version_id"
+  verify_modrinth_version_id 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512" "$neoforge_version_id"
+
   curl -fsSL --retry 3 \
     -H "Authorization: ${MODRINTH_TOKEN}" \
     -H "User-Agent: ${MR_USER_AGENT}" \
     -H "Accept: application/json" \
     "$MR_API/project/$mr_project_path" \
     -o "$ECHO_WORK/modrinth-project-before-review.json"
+  jq -e --arg fabric "$fabric_version_id" --arg neoforge "$neoforge_version_id" \
+    '.title == "Echo Companion" and
+     .license.id == "MIT" and
+     .project_type == "mod" and
+     .client_side == "required" and
+     .server_side == "unsupported" and
+     ((.versions // []) | index($fabric)) != null and
+     ((.versions // []) | index($neoforge)) != null' \
+    "$ECHO_WORK/modrinth-project-before-review.json" >/dev/null || fail "Modrinth project did not resolve to the expected mod metadata after uploads"
   current_project_status="$(jq -er '.status' "$ECHO_WORK/modrinth-project-before-review.json")"
   current_requested_status="$(jq -r '.requested_status // ""' "$ECHO_WORK/modrinth-project-before-review.json")"
 
