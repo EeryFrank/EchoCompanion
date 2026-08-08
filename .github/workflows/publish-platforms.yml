@@ -29,6 +29,10 @@ on:
           - both
           - modrinth
           - curseforge
+      modrinth_slug_confirmation:
+        description: For Modrinth publish, re-enter the project slug shown by preflight
+        required: false
+        type: string
       curseforge_loader:
         description: Loader selection for first publish or partial-failure recovery
         required: true
@@ -73,6 +77,7 @@ jobs:
           INPUT_MODE: ${{ inputs.mode }}
           INPUT_TAG: ${{ inputs.tag }}
           INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_MR_SLUG_CONFIRM: ${{ inputs.modrinth_slug_confirmation }}
           INPUT_CF_LOADER: ${{ inputs.curseforge_loader }}
           INPUT_CF_PROJECT_CONFIRM: ${{ inputs.curseforge_project_id_confirmation }}
           INPUT_CONFIRM: ${{ inputs.confirm }}

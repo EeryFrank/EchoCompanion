@@ -186,6 +186,7 @@ MR_PROJECT_RESOLVED_ID=""
 MR_PROJECT_SLUG=""
 MR_PROJECT_STATUS=""
 MR_PROJECT_NEEDS_INITIALIZATION=false
+MR_PROJECT_IS_EMPTY_PLACEHOLDER=false
 MR_PROJECT_PREFLIGHT_STATE="not requested"
 MR_VERSIONS_JSON="$ECHO_WORK/modrinth-versions.json"
 
@@ -238,7 +239,17 @@ if $need_modrinth; then
      ((.versions // []) | length) == 0' \
     "$ECHO_WORK/modrinth-project.json" >/dev/null; then
     MR_PROJECT_NEEDS_INITIALIZATION=true
+    MR_PROJECT_IS_EMPTY_PLACEHOLDER=true
     MR_PROJECT_PREFLIGHT_STATE="empty draft placeholder; publish will set client/server support before uploading"
+  elif jq -e \
+    '.project_type == "project" and
+     .client_side == "required" and
+     .server_side == "unsupported" and
+     .status == "draft" and
+     ((.versions // []) | length) == 0' \
+    "$ECHO_WORK/modrinth-project.json" >/dev/null; then
+    MR_PROJECT_IS_EMPTY_PLACEHOLDER=true
+    MR_PROJECT_PREFLIGHT_STATE="initialized empty draft; ready to upload"
   else
     project_summary="$(jq -cer \
       '{title, project_type, license_id: .license.id, client_side, server_side, status, requested_status, version_count: ((.versions // []) | length)}' \
@@ -249,8 +260,12 @@ if $need_modrinth; then
   MR_PROJECT_RESOLVED_ID="$(jq -er '.id' "$ECHO_WORK/modrinth-project.json")"
   MR_PROJECT_SLUG="$(jq -er '.slug' "$ECHO_WORK/modrinth-project.json")"
   MR_PROJECT_STATUS="$(jq -er '.status' "$ECHO_WORK/modrinth-project.json")"
+  if [[ "$INPUT_MODE" == "publish" ]]; then
+    require_value INPUT_MR_SLUG_CONFIRM "${INPUT_MR_SLUG_CONFIRM:-}"
+    [[ "$INPUT_MR_SLUG_CONFIRM" == "$MR_PROJECT_SLUG" ]] || fail "Modrinth slug confirmation does not match the configured project"
+  fi
   refresh_modrinth_versions
-  if $MR_PROJECT_NEEDS_INITIALIZATION; then
+  if $MR_PROJECT_IS_EMPTY_PLACEHOLDER; then
     jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Empty Modrinth placeholder unexpectedly has versions"
   fi
 fi
@@ -479,8 +494,8 @@ if $need_modrinth; then
   refresh_modrinth_versions
   modrinth_target_is_safe 'fabric' "$FABRIC_FILE" "$FABRIC_SHA512"
   modrinth_target_is_safe 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512"
-  if $MR_PROJECT_NEEDS_INITIALIZATION; then
-    jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Modrinth placeholder gained versions after preflight; refusing initialization"
+  if $MR_PROJECT_IS_EMPTY_PLACEHOLDER; then
+    jq -e 'length == 0' "$MR_VERSIONS_JSON" >/dev/null || fail "Modrinth placeholder gained versions after preflight; refusing to continue"
   fi
 
   mr_project_path="$(urlencode "$MR_PROJECT_RESOLVED_ID")"
