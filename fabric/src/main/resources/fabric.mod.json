@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "echo_companion",
+  "version": "${version}",
+  "name": "Echo Companion",
+  "description": "An original switchable scripted/remote AI companion for Minecraft.",
+  "authors": ["Echo Companion Contributors"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.echoai.companion.fabric.EchoCompanionFabric"
+    ]
+  },
+  "mixins": [
+    "echo_companion.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21"
+  }
+}

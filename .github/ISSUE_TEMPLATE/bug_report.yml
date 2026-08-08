@@ -1,0 +1,79 @@
+name: Bug 报告
+description: 报告可复现的 Echo Companion 问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先删除日志和截图中的 API Key、Authorization 请求头、私人 endpoint 与对话内容。安全漏洞请按 SECURITY.md 私密报告。
+  - type: input
+    id: mod-version
+    attributes:
+      label: 模组版本或提交
+      placeholder: 例如 0.1.0 或 commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: loader
+    attributes:
+      label: 加载器
+      options:
+        - Fabric
+        - NeoForge
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 环境版本
+      description: 填写 Minecraft、加载器和 Java 的完整版本。
+      placeholder: Minecraft 1.21.1 / Fabric Loader 0.16.14 / Java 21
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: AI 模式
+      options:
+        - SCRIPTED
+        - REMOTE
+        - 两者都受影响
+        - 与对话模式无关
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: 从干净或隔离实例开始，逐步说明操作。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已脱敏日志
+      description: 可粘贴最小相关片段或上传文件；不要包含任何凭据或私人内容。
+      render: text
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已确认本报告不含 API Key、Authorization 请求头或其他秘密。
+          required: true
+        - label: 这不是需要私密报告的安全漏洞。
+          required: true

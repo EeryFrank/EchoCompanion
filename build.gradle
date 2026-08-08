@@ -1,0 +1,55 @@
+plugins {
+    id "dev.architectury.loom" version "1.11.456" apply false
+    // Pin the timestamped 3.4 snapshot so builds cannot silently pick up a
+    // different Architectury plugin implementation later.
+    id "architectury-plugin" version "3.4-20260412.215235-1"
+    id "com.github.johnrengelman.shadow" version "8.1.1" apply false
+}
+
+architectury {
+    minecraft = minecraft_version
+}
+
+allprojects {
+    group = maven_group
+    version = mod_version
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    base {
+        archivesName = "${rootProject.archives_name}-${project.name}-${rootProject.minecraft_version}"
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://maven.fabricmc.net/" }
+        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://maven.neoforged.net/releases/" }
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+        mappings loom.officialMojangMappings()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = "UTF-8"
+        options.release = 21
+    }
+
+    java {
+        withSourcesJar()
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events "failed", "skipped"
+            exceptionFormat "full"
+        }
+    }
+}

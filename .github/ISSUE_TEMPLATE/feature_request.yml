@@ -1,0 +1,46 @@
+name: 功能建议
+description: 建议符合原创与客户端安全边界的新功能
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+      description: 说明使用场景，而不只是指定一种实现。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 影响范围
+      options:
+        - SCRIPTED
+        - REMOTE
+        - 设置或界面
+        - Fabric / NeoForge 兼容
+        - 文档或构建
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: 隐私与服务器影响
+      description: 是否涉及网络请求、凭据、持久化、Minecraft 数据包或世界修改？
+    validations:
+      required: true
+  - type: checkboxes
+    id: originality
+    attributes:
+      label: 原创确认
+      options:
+        - label: 此建议不要求复制或打包 Verity / ARR 或其他第三方的未授权代码、文本、UI 或资产。
+          required: true
