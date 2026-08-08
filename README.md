@@ -1,11 +1,28 @@
 # Echo Companion
 
-Echo Companion 是一个面向 Minecraft Java Edition 1.21.1 的原创客户端对话伴侣模组，同时构建 Fabric 与 NeoForge 版本。玩家可以在游戏内切换两种工作模式：
+## Introduction / 项目介绍
 
-- `SCRIPTED`：完全离线的规则式“伪 AI”，无需 API Key。
-- `REMOTE`：连接玩家自行配置的 OpenAI-compatible Chat Completions 服务，由远程模型生成回复。
+### English
 
-当前实现是对话界面与 HUD 状态提示，不是可寻路的 NPC，也不具备执行指令、代替玩家操作或修改服务器世界的能力。
+Echo Companion is an original client-side AI dialogue companion mod for Minecraft Java Edition 1.21.1, built for both Fabric and NeoForge. It provides an in-game dialogue screen, HUD status indicators, AI settings, and two switchable modes:
+
+- `SCRIPTED`: fully offline rule-based “pseudo-AI” dialogue with no API key required.
+- `REMOTE`: responses generated through a player-configured OpenAI-compatible Chat Completions endpoint, with optional fallback to `SCRIPTED` when the remote service fails.
+
+The original idea for this project came from the Verity mod and its approach to bringing an AI companion experience into Minecraft. Echo Companion is an independent, original implementation and does not copy or redistribute Verity's code, assets, dialogue, branding, or other content.
+
+The current implementation is a client-side dialogue companion, not a pathfinding NPC. It cannot execute commands, take over player controls, or modify the server world.
+
+### 中文
+
+Echo Companion 是一个面向 Minecraft Java Edition 1.21.1 的原创客户端 AI 对话伴侣模组，同时构建 Fabric 与 NeoForge 版本。它提供游戏内对话界面、HUD 状态提示、AI 设置以及两种可切换模式：
+
+- `SCRIPTED`：完全离线的规则式“伪 AI”对话，无需 API Key。
+- `REMOTE`：通过玩家自行配置的 OpenAI-compatible Chat Completions 接口生成回复，并可在远程服务失败时回退到 `SCRIPTED`。
+
+本项目最初的想法来源于 Verity 模组，以及它在 Minecraft 中加入 AI 伴侣体验的方向。Echo Companion 是独立、原创实现，不复制或再分发 Verity 的代码、资产、对话、品牌标识或其他内容。
+
+当前实现是客户端对话伴侣，并非可寻路的 NPC；它不能执行指令、接管玩家操作或修改服务器世界。
 
 ## 支持范围
 
