@@ -113,3 +113,11 @@ sha256sum fabric/build/libs/*.jar neoforge/build/libs/*.jar
 - `MODRINTH_TOKEN` 至少需要 `Read projects`、`Write projects`、`Read versions`、`Create versions` 和 `Write versions`。工作流会同步项目正文与版本说明，因此仅有创建版本权限并不足够。
 - `CURSEFORGE_TOKEN` 仅用于作者 Upload API 的文件发布；它不能通过官方接口修改项目 Summary 或 Description。
 - Token 只保存在 GitHub Actions Secrets 中。不要把 Token 写入仓库、Issue、PR、日志、截图或聊天。
+
+## Modrinth 审核中断恢复
+
+若首次发布在 Fabric 成功后中断，而项目已经进入 Modrinth 审核队列，先使用 `mode=preflight` 和 `platform=modrinth` 做只读检查；通过后再改为 `mode=publish`，填写 slug `echo-companion` 和确认文本 `PUBLISH v0.1.0-alpha.1`。不得再次选择 `both` 或 `curseforge`。`curseforge_loader` 是工作流必填项，但在 Modrinth-only 运行中会被忽略。发布脚本只在项目严格处于以下状态时允许恢复：现有 Fabric 版本与 GitHub Release 的名称、版本号、加载器、文件名和 SHA-512 完全一致，NeoForge 版本不存在，并且没有任何额外版本。
+
+该恢复路径只创建缺失的 NeoForge 版本，不修改项目正文、图标、审核状态或现有 Fabric changelog，也不会再次提交审核。NeoForge 创建后，脚本必须回读并确认项目版本集合严格等于两个已审计版本。项目审核通过后，再单独运行一次 Modrinth 发布流程，以同步项目正文、图标及两个版本的 changelog；该次运行应复用两个现有版本，不得再次上传文件。
+
+若预检提示 NeoForge 文件已经能通过 SHA-512 查到、但项目版本列表尚未显示它，说明 Modrinth 数据仍在传播。此时等待后重新运行 `preflight`，不要直接重复运行 `publish`。
