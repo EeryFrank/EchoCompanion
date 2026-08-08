@@ -1,0 +1,84 @@
+name: Publish platform releases
+
+run-name: ${{ inputs.mode }} ${{ inputs.platform }} ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preflight performs no remote writes
+        required: true
+        type: choice
+        default: preflight
+        options:
+          - preflight
+          - publish
+      tag:
+        description: Audited GitHub prerelease tag to publish
+        required: true
+        type: choice
+        default: v0.1.0-alpha.1
+        options:
+          - v0.1.0-alpha.1
+      platform:
+        description: Platforms to process
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - modrinth
+          - curseforge
+      curseforge_loader:
+        description: Loader selection for first publish or partial-failure recovery
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - fabric
+          - neoforge
+      curseforge_project_id_confirmation:
+        description: For CurseForge publish, re-enter the numeric Project ID
+        required: false
+        type: string
+      confirm:
+        description: For publish mode, enter PUBLISH followed by the tag
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: echo-companion-platform-publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: ${{ inputs.mode }} platform release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out trusted publishing files
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run guarded platform publisher
+        shell: bash
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_CF_LOADER: ${{ inputs.curseforge_loader }}
+          INPUT_CF_PROJECT_CONFIRM: ${{ inputs.curseforge_project_id_confirmation }}
+          INPUT_CONFIRM: ${{ inputs.confirm }}
+          GH_API_TOKEN: ${{ github.token }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ secrets.MODRINTH_PROJECT_ID }}
+        run: bash .github/scripts/publish-platforms.sh
