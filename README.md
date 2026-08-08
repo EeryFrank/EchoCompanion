@@ -1,5 +1,9 @@
 # Echo Companion
 
+<p align="center">
+  <img src="assets/branding/echo-companion-logo-512.png" alt="Echo Companion logo" width="192">
+</p>
+
 ## Introduction / 项目介绍
 
 ### English

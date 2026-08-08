@@ -33,6 +33,9 @@ jobs:
       - name: Make Gradle Wrapper executable
         run: chmod +x gradlew
 
+      - name: Validate platform publisher syntax
+        run: bash -n .github/scripts/publish-platforms.sh
+
       - name: Run common unit tests
         run: ./gradlew --no-daemon --stacktrace :common:test --rerun-tasks
 
