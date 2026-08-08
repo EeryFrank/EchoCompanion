@@ -106,4 +106,10 @@ sha256sum fabric/build/libs/*.jar neoforge/build/libs/*.jar
 3. 推送候选提交，让 `.github/workflows/build.yml` 在 GitHub 上完成测试和两个加载器构建。
 4. 审核 CI 日志与下载产物；不要仅依据绿色状态跳过游戏内验收。
 5. 创建与版本一致的标签（例如 `v0.1.0`）和 GitHub Release，附加两个最终 JAR 与 SHA-256。
-6. 在发布说明中披露 API Key 明文记忆行为、REMOTE 的第三方数据传输，以及与 Verity / ARR 无资产复用的原创边界。
+6. 在发布说明中披露 API Key 明文记忆行为、REMOTE 的第三方数据传输，并使用“模组玩法受 Verity 启发 / The mod's gameplay is inspired by Verity”说明灵感来源，同时保留独立原创实现及不复制、打包或再分发 Verity / ARR 代码与资产的边界。
+
+## Modrinth 与 CurseForge 发布凭据
+
+- `MODRINTH_TOKEN` 至少需要 `Read projects`、`Write projects`、`Read versions`、`Create versions` 和 `Write versions`。工作流会同步项目正文与版本说明，因此仅有创建版本权限并不足够。
+- `CURSEFORGE_TOKEN` 仅用于作者 Upload API 的文件发布；它不能通过官方接口修改项目 Summary 或 Description。
+- Token 只保存在 GitHub Actions Secrets 中。不要把 Token 写入仓库、Issue、PR、日志、截图或聊天。
