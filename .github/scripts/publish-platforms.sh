@@ -21,8 +21,12 @@ readonly EXPECTED_LOGO_SIZE="246485"
 readonly MR_API="https://api.modrinth.com/v2"
 readonly CF_API="https://minecraft.curseforge.com/api"
 readonly MR_USER_AGENT="EeryFrank/EchoCompanion/0.1.0 (https://github.com/EeryFrank/EchoCompanion)"
+readonly MR_PROJECT_DESCRIPTION="A client-side Minecraft 1.21.1 scripted/remote AI dialogue mod for Fabric and NeoForge. The mod's gameplay is inspired by Verity; it is an independent, original implementation with no Verity/ARR asset reuse."
+readonly MR_INSPIRATION_EN="The mod's gameplay is inspired by Verity."
+readonly MR_INSPIRATION_ZH="模组玩法受 Verity 启发。"
 readonly LOGO_FILE="${GITHUB_WORKSPACE}/assets/branding/echo-companion-logo-512.png"
 readonly PINNED_CHANGELOG_FILE="${GITHUB_WORKSPACE}/.github/release-notes/v0.1.0-alpha.1.md"
+readonly PINNED_PROJECT_BODY_FILE="${GITHUB_WORKSPACE}/README.md"
 
 fail() {
   echo "::error::$*" >&2
@@ -107,6 +111,7 @@ jq -e --arg commit "$EXPECTED_TAG_COMMIT" \
   "$TAG_REF_JSON" >/dev/null || fail "Git tag no longer points to the audited release commit"
 
 [[ -s "$PINNED_CHANGELOG_FILE" ]] || fail "Pinned release notes are missing"
+[[ -s "$PINNED_PROJECT_BODY_FILE" ]] || fail "Pinned project description is missing"
 cp -- "$PINNED_CHANGELOG_FILE" "$CHANGELOG_FILE"
 
 select_release_asset() {
@@ -440,7 +445,8 @@ modrinth_existing_version() {
      ($matches | length) == 1 and
      $matches[0].name == $name and
      $matches[0].version_type == "alpha" and
-     $matches[0].environment == "client_only" and
+     (($matches[0] | has("environment") | not) or
+      $matches[0].environment == "client_only") and
      $matches[0].status == "listed" and
      ($matches[0].game_versions | length) == 1 and
      $matches[0].game_versions[0] == "1.21.1" and
@@ -720,6 +726,120 @@ wait_for_modrinth_fabric_project_state() {
   fail "Modrinth project did not derive client-only mod metadata after Fabric upload: ${project_summary}; endpoint_version_count=${endpoint_version_count}; attempts=12"
 }
 
+sync_modrinth_project_copy() {
+  local body_file payload_file project_file update_http
+
+  body_file="$ECHO_WORK/modrinth-project-body.md"
+  payload_file="$ECHO_WORK/modrinth-project-copy.json"
+  project_file="$ECHO_WORK/modrinth-project-after-copy.json"
+
+  jq -jnr \
+    --rawfile body "$PINNED_PROJECT_BODY_FILE" \
+    --arg relative_logo 'src="assets/branding/echo-companion-logo-512.png"' \
+    --arg absolute_logo 'src="https://raw.githubusercontent.com/EeryFrank/EchoCompanion/main/assets/branding/echo-companion-logo-512.png"' \
+    --arg relative_security '](SECURITY.md)' \
+    --arg absolute_security '](https://github.com/EeryFrank/EchoCompanion/blob/main/SECURITY.md)' \
+    --arg relative_releasing '](docs/RELEASING.md' \
+    --arg absolute_releasing '](https://github.com/EeryFrank/EchoCompanion/blob/main/docs/RELEASING.md' \
+    --arg relative_architecture '](docs/ARCHITECTURE.md)' \
+    --arg absolute_architecture '](https://github.com/EeryFrank/EchoCompanion/blob/main/docs/ARCHITECTURE.md)' \
+    --arg relative_contributing '](.github/CONTRIBUTING.md)' \
+    --arg absolute_contributing '](https://github.com/EeryFrank/EchoCompanion/blob/main/.github/CONTRIBUTING.md)' \
+    --arg relative_license '](LICENSE)' \
+    --arg absolute_license '](https://github.com/EeryFrank/EchoCompanion/blob/main/LICENSE)' '
+      def literal_replace($from; $to): split($from) | join($to);
+      $body
+      | literal_replace($relative_logo; $absolute_logo)
+      | literal_replace($relative_security; $absolute_security)
+      | literal_replace($relative_releasing; $absolute_releasing)
+      | literal_replace($relative_architecture; $absolute_architecture)
+      | literal_replace($relative_contributing; $absolute_contributing)
+      | literal_replace($relative_license; $absolute_license)' \
+    > "$body_file"
+
+  jq -n \
+    --arg description "$MR_PROJECT_DESCRIPTION" \
+    --rawfile body "$body_file" \
+    '{description: $description, body: $body}' \
+    > "$payload_file"
+
+  update_http="$(curl -sS \
+    -o "$ECHO_WORK/modrinth-project-copy-response.json" \
+    -w '%{http_code}' \
+    -X PATCH \
+    -H "Authorization: ${MODRINTH_TOKEN}" \
+    -H "User-Agent: ${MR_USER_AGENT}" \
+    -H "Content-Type: application/json" \
+    --data-binary "@${payload_file}" \
+    "$MR_API/project/$mr_project_path")"
+  [[ "$update_http" == "204" ]] || fail "Modrinth project copy update failed (HTTP ${update_http})"
+
+  curl -fsSL --retry 3 \
+    -H "Authorization: ${MODRINTH_TOKEN}" \
+    -H "User-Agent: ${MR_USER_AGENT}" \
+    -H "Accept: application/json" \
+    "$MR_API/project/$mr_project_path" \
+    -o "$project_file"
+  jq -e \
+    --arg description "$MR_PROJECT_DESCRIPTION" \
+    --arg new_en "$MR_INSPIRATION_EN" \
+    --arg new_zh "$MR_INSPIRATION_ZH" \
+    --rawfile expected_body "$body_file" \
+    '.title == "Echo Companion" and
+     .license.id == "MIT" and
+     .description == $description and
+     .body == $expected_body and
+     (.body | contains($new_en)) and
+     (.body | contains($new_zh))' \
+    "$project_file" >/dev/null || fail "Modrinth project copy did not retain the approved inspiration wording"
+  if $MR_PROJECT_IS_EMPTY_PLACEHOLDER; then
+    modrinth_stable_empty_draft_state "$project_file" ||
+      fail "Modrinth empty project state changed during the copy update"
+  else
+    jq -e \
+      '.project_type == "mod" and
+       .client_side == "required" and
+       .server_side == "unsupported" and
+       ((.status == "draft" and (.requested_status == null or .requested_status == "draft")) or
+        .status == "approved")' \
+      "$project_file" >/dev/null || fail "Modrinth project state changed during the copy update"
+  fi
+  echo "Modrinth project description synchronized with the approved Verity gameplay-inspiration wording."
+}
+
+sync_modrinth_version_changelog() {
+  local version_id="$1"
+  local display_loader="$2"
+  local version_path payload_file version_file update_http
+
+  version_path="$(urlencode "$version_id")"
+  payload_file="$ECHO_WORK/modrinth-${display_loader,,}-changelog.json"
+  version_file="$ECHO_WORK/modrinth-${display_loader,,}-after-changelog.json"
+  jq -n --rawfile changelog "$CHANGELOG_FILE" '{changelog: $changelog}' > "$payload_file"
+
+  update_http="$(curl -sS \
+    -o "$ECHO_WORK/modrinth-${display_loader,,}-changelog-response.json" \
+    -w '%{http_code}' \
+    -X PATCH \
+    -H "Authorization: ${MODRINTH_TOKEN}" \
+    -H "User-Agent: ${MR_USER_AGENT}" \
+    -H "Content-Type: application/json" \
+    --data-binary "@${payload_file}" \
+    "$MR_API/version/$version_path")"
+  [[ "$update_http" == "204" ]] || fail "Modrinth ${display_loader} changelog update failed (HTTP ${update_http})"
+
+  curl -fsSL --retry 3 \
+    -H "Authorization: ${MODRINTH_TOKEN}" \
+    -H "User-Agent: ${MR_USER_AGENT}" \
+    -H "Accept: application/json" \
+    "$MR_API/version/$version_path" \
+    -o "$version_file"
+  jq -e --arg id "$version_id" --rawfile changelog "$CHANGELOG_FILE" \
+    '.id == $id and .changelog == $changelog' \
+    "$version_file" >/dev/null || fail "Modrinth ${display_loader} changelog verification failed"
+  echo "Modrinth ${display_loader} changelog synchronized."
+}
+
 if $need_modrinth; then
   if $MR_PROJECT_REVIEW_RECOVERY; then
     mr_project_path="$(urlencode "$MR_PROJECT_RESOLVED_ID")"
@@ -819,6 +939,11 @@ if $need_modrinth; then
     echo "Modrinth project review request reset before the first version: ${project_summary}; endpoint_version_count=${endpoint_version_count}"
   fi
 
+  sync_modrinth_project_copy
+  refresh_modrinth_versions
+  modrinth_version_set_is_exact "$MR_FABRIC_EXISTING_ID" "$MR_NEOFORGE_EXISTING_ID" ||
+    fail "Modrinth version set changed during the project copy update; refusing to continue"
+
   icon_http="$(curl -sS \
     -o "$ECHO_WORK/modrinth-icon-response.json" \
     -w '%{http_code}' \
@@ -849,6 +974,8 @@ if $need_modrinth; then
   fabric_version_id="$(upload_modrinth_version 'fabric' 'Fabric' "$FABRIC_PATH" "$FABRIC_FILE" "$FABRIC_SHA512")"
   echo "Modrinth Fabric version ready: ${fabric_version_id}"
   verify_modrinth_version_id 'fabric' "$FABRIC_FILE" "$FABRIC_SHA512" "$fabric_version_id"
+  sync_modrinth_version_changelog "$fabric_version_id" 'Fabric'
+  verify_modrinth_version_id 'fabric' "$FABRIC_FILE" "$FABRIC_SHA512" "$fabric_version_id"
   refresh_modrinth_versions
   if neoforge_version_id="$(modrinth_existing_version 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512")"; then
     echo "Modrinth NeoForge version already matches; skipping upload."
@@ -860,6 +987,8 @@ if $need_modrinth; then
   fi
   echo "Modrinth NeoForge version ready: ${neoforge_version_id}"
 
+  verify_modrinth_version_id 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512" "$neoforge_version_id"
+  sync_modrinth_version_changelog "$neoforge_version_id" 'NeoForge'
   verify_modrinth_version_id 'neoforge' "$NEOFORGE_FILE" "$NEOFORGE_SHA512" "$neoforge_version_id"
   refresh_modrinth_versions
   modrinth_version_set_is_exact "$fabric_version_id" "$neoforge_version_id" ||

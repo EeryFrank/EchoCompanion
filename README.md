@@ -13,7 +13,7 @@ Echo Companion is an original client-side AI dialogue companion mod for Minecraf
 - `SCRIPTED`: fully offline, rule-based “pseudo-AI” dialogue that requires no API key.
 - `REMOTE`: replies generated through a player-configured OpenAI-compatible Chat Completions endpoint, with an optional fallback to `SCRIPTED` if the remote service fails.
 
-This project only draws inspiration from Verity's idea of integrating AI into Minecraft. Echo Companion is an independent, original implementation and does not copy or redistribute Verity's code, assets, dialogue, branding, or other content.
+The mod's gameplay is inspired by Verity. Echo Companion is an independent, original implementation and does not copy, bundle, or redistribute any code, assets, dialogue, branding, or other content from Verity or ARR.
 
 The current implementation is a client-side dialogue companion, not a pathfinding NPC. It cannot execute commands, take control of the player, or modify the server world.
 
@@ -24,7 +24,7 @@ Echo Companion 是一个面向 Minecraft Java Edition 1.21.1 的原创客户端 
 - `SCRIPTED`：完全离线、基于规则的“伪 AI”对话，无需 API Key。
 - `REMOTE`：通过玩家自行配置的 OpenAI-compatible Chat Completions 接口生成回复；远程服务失败时，可选择回退到 `SCRIPTED`。
 
-本项目仅借鉴 Verity 将 AI 接入 Minecraft 的灵感。Echo Companion 是独立、原创实现，不复制或再分发 Verity 的代码、资产、对话、品牌标识或其他内容。
+模组玩法受 Verity 启发。Echo Companion 是独立、原创实现，不复制、打包或再分发 Verity 或 ARR 的代码、资产、对话、品牌标识或其他内容。
 
 当前实现是客户端对话伴侣，并非可寻路的 NPC。它不能执行指令、接管玩家操作或修改服务器世界。
 
@@ -220,13 +220,13 @@ docs/      架构边界与发布流程
 
 ### English
 
-The only inspiration Echo Companion draws from Verity is the idea of integrating AI into Minecraft. Echo Companion is an independent, original implementation and is not affiliated with, endorsed by, or authorized by the authors or projects behind Verity or ARR. This repository does not copy, bundle, or redistribute any code, names, dialogue text, models, textures, sounds, UI, branding, or other assets from Verity or ARR.
+The mod's gameplay is inspired by Verity. Echo Companion is an independent, original implementation and is not affiliated with, endorsed by, or authorized by the authors or projects behind Verity or ARR. This repository does not copy, bundle, or redistribute any code, names, dialogue text, models, textures, sounds, UI, branding, or other assets from Verity or ARR.
 
 Contributions must maintain the same boundary. Do not submit copyrighted content extracted from Verity, ARR, or any other third-party project. All third-party dependencies and materials must have clear and compatible licenses.
 
 ### 中文
 
-Echo Companion 仅借鉴 Verity 将 AI 接入 Minecraft 的灵感。Echo Companion 是独立、原创的实现，与 Verity 或 ARR 的作者及项目不存在从属、认可或授权关系。本仓库不复制、打包或再分发 Verity 或 ARR 的任何代码、名称、对话文本、模型、纹理、声音、UI、品牌标识或其他资产。
+模组玩法受 Verity 启发。Echo Companion 是独立、原创的实现，与 Verity 或 ARR 的作者及项目不存在从属、认可或授权关系。本仓库不复制、打包或再分发 Verity 或 ARR 的任何代码、名称、对话文本、模型、纹理、声音、UI、品牌标识或其他资产。
 
 贡献内容也必须遵守同样的边界。请勿提交从 Verity、ARR 或其他第三方项目中提取的受版权保护内容；所有第三方依赖和素材都必须具有明确且兼容的许可证。
 
