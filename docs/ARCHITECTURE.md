@@ -8,6 +8,55 @@
 
 两种加载器共享同一套业务代码，目标 Minecraft 版本均为 1.21.1，编译目标为 Java 21。
 
+## 外部依赖图
+
+| 依赖 | 固定版本 | 作用域 |
+| --- | --- | --- |
+| Java | 21 | 编译和运行 |
+| Minecraft | 1.21.1 | 游戏 API 与运行环境 |
+| Architectury Loom | 1.11.456 | 跨加载器开发与映射 |
+| Architectury Plugin | 3.4-20260412.215235-1 | `common`、`fabric`、`neoforge` 模块组织 |
+| Fabric Loader | 0.16.14 | Fabric 客户端入口 |
+| NeoForge | 21.1.216 | NeoForge 客户端入口 |
+| Shadow Plugin | 8.1.1 | 将 `common` 代码打入各加载器成品 |
+| JUnit | 5.11.4 | 仅用于 `common` 单元测试 |
+
+远程对话没有引入第三方 AI SDK；`OpenAiCompatibleDialogueEngine` 直接使用 Java 21 自带的 `HttpClient` 和项目内 JSON 编解码逻辑。
+
+```mermaid
+flowchart LR
+    Java["Java 21"] --> Gradle["Gradle Wrapper"]
+    Minecraft["Minecraft 1.21.1"] --> Common["common"]
+    Loom["Architectury Loom 1.11.456"] --> Common
+    Architectury["Architectury Plugin 3.4 snapshot"] --> Common
+    Common --> Fabric["Fabric Loader 0.16.14 artifact"]
+    Common --> NeoForge["NeoForge 21.1.216 artifact"]
+    Shadow["Shadow 8.1.1"] --> Fabric
+    Shadow --> NeoForge
+    JUnit["JUnit 5.11.4"] -. "test only" .-> Common
+```
+
+## 代码关系图
+
+```mermaid
+flowchart TD
+    FabricEntry["EchoCompanionFabric"] --> CommonEntry["EchoCompanion / EchoCompanionClient"]
+    NeoForgeEntry["EchoCompanionNeoForge"] --> CommonEntry
+
+    PauseMixin["PauseScreenMixin"] --> Client["EchoCompanionClient"]
+    OptionsMixin["OptionsScreenMixin"] --> Settings["EchoSettingsScreen"]
+    GuiMixin["GuiMixin"] --> Overlay["EchoOverlayRenderer"]
+
+    Client --> Controller["ClientDialogueController"]
+    Settings --> ConfigStore["CompanionConfigStore"]
+    Controller --> ConfigStore
+    Controller --> Router["EngineRouter"]
+    Router --> Scripted["ScriptedDialogueEngine"]
+    Router --> Remote["OpenAiCompatibleDialogueEngine"]
+    Controller --> History["DialogueHistory"]
+    Remote --> Http["Java HttpClient\nuser-configured endpoint"]
+```
+
 ## 对话路径
 
 ```text

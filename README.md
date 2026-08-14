@@ -203,7 +203,7 @@ neoforge/  NeoForge entry point and packaging configuration
 docs/      Architecture boundaries and release process
 ```
 
-See the [architecture documentation](docs/ARCHITECTURE.md) for details about the design and security boundaries.
+See the [architecture documentation](docs/ARCHITECTURE.md) for dependency graphs, code relationships, design details, and security boundaries.
 
 ### 中文
 
@@ -214,7 +214,7 @@ neoforge/  NeoForge 入口与打包配置
 docs/      架构边界与发布流程
 ```
 
-有关设计与安全边界的详细说明，请参阅[架构说明](docs/ARCHITECTURE.md)。
+依赖图、代码关系、设计细节与安全边界请参阅[架构说明](docs/ARCHITECTURE.md)。
 
 ## Relationship with Verity and ARR / 与 Verity 和 ARR 的关系
 
