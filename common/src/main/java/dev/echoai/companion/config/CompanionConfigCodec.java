@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 package dev.echoai.companion.config;
 
 import com.google.gson.Gson;

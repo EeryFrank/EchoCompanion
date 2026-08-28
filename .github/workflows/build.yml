@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 name: Build and test
 
 on:
@@ -37,7 +39,7 @@ jobs:
         run: bash -n .github/scripts/publish-platforms.sh
 
       - name: Run common unit tests
-        run: ./gradlew --no-daemon --stacktrace :common:test --rerun-tasks
+        run: ./gradlew --no-daemon --stacktrace verifyLicensing :common:test --rerun-tasks
 
       - name: Upload test report
         if: always()
@@ -76,7 +78,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build loader artifact
-        run: ./gradlew --no-daemon --stacktrace :${{ matrix.loader }}:build
+        run: ./gradlew --no-daemon --stacktrace :${{ matrix.loader }}:build :${{ matrix.loader }}:verifyArtifactLicensing
 
       - name: Upload remapped JAR
         uses: actions/upload-artifact@v4

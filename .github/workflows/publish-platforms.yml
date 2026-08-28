@@ -1,4 +1,8 @@
-name: Publish platform releases
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+# This workflow is intentionally pinned to the legacy MIT alpha release.
+# A later LGPL release must use separately audited inputs and platform metadata.
+name: Publish legacy alpha platform release
 
 run-name: ${{ inputs.mode }} ${{ inputs.platform }} ${{ inputs.tag }}
 
@@ -14,7 +18,7 @@ on:
           - preflight
           - publish
       tag:
-        description: Audited GitHub prerelease tag to publish
+        description: Audited legacy MIT GitHub prerelease tag to publish
         required: true
         type: choice
         default: v0.1.0-alpha.1

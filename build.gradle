@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 plugins {
     id "dev.architectury.loom" version "1.11.456" apply false
     // Pin the timestamped 3.4 snapshot so builds cannot silently pick up a
@@ -15,6 +17,126 @@ allprojects {
     version = mod_version
 }
 
+ext.packagedLegalFiles = [
+        "META-INF/LICENSE-echo-companion-LGPL-3.0-or-later.txt": file("LICENSE"),
+        "META-INF/LICENSE-echo-companion-CC-BY-SA-4.0.txt"    : file("LICENSES/CC-BY-SA-4.0.txt"),
+        "META-INF/LICENSE-POLICY-echo-companion.md"           : file("LICENSE_POLICY.md"),
+        "META-INF/THIRD-PARTY-NOTICES-echo-companion.md"      : file("THIRD_PARTY_NOTICES.md")
+]
+
+def attachPackagedLegalFiles = { Jar archiveTask ->
+    rootProject.packagedLegalFiles.each { String entryPath, File sourceFile ->
+        int separator = entryPath.lastIndexOf("/")
+        String targetDirectory = entryPath.substring(0, separator)
+        String targetName = entryPath.substring(separator + 1)
+        archiveTask.from(sourceFile) {
+            into targetDirectory
+            rename { targetName }
+        }
+    }
+}
+
+def sha256 = { File sourceFile ->
+    java.security.MessageDigest.getInstance("SHA-256")
+            .digest(sourceFile.bytes)
+            .encodeHex()
+            .toString()
+            .toUpperCase(java.util.Locale.ROOT)
+}
+
+tasks.register("verifyLicensing") {
+    group = "verification"
+    description = "Verifies legal texts, SPDX headers, and loader license templates."
+
+    doLast {
+        Map<File, String> expectedLegalHashes = [
+                (file("LICENSE"))                         : "996AF0513DF21F7496288951C41428A03C174E9E4A9D63665C57D670F845CCB1",
+                (file("LICENSES/CC-BY-SA-4.0.txt"))      : "CDE7883B9050A1104F4AC19A1572AAFD6E5D7323B68351AAF51FBF4BEBA54966",
+                (file("LICENSES/Apache-2.0.txt"))        : "074E6E32C86A4C0EF8B3ED25B721CA23ACA83DF277CD88106EF7177C354615FF",
+                (file("LICENSES/MIT.txt"))               : "B23ACF9F125C894006F600C045CC1EA277ABD652BD59B5001BE8D472BD4E9D92"
+        ]
+        expectedLegalHashes.each { File legalFile, String expectedHash ->
+            if (!legalFile.isFile()) {
+                throw new GradleException("Required legal file is missing: ${legalFile}")
+            }
+            String actualHash = sha256(legalFile)
+            if (actualHash != expectedHash) {
+                throw new GradleException("Legal text hash mismatch for ${legalFile}: ${actualHash}")
+            }
+        }
+
+        Map<File, String> expectedBrandingHashes = [
+                (file("assets/branding/echo-companion-logo-source.png")): "862C4D91E571C8207A097BC1E4153D75F62E89EE784968632365A9B8DAF5A3C8",
+                (file("assets/branding/echo-companion-logo-512.png"))   : "188343D5F8A4977C265CF894EEDBE27C4FAD06DB4EC1E9FA30E526952176660D"
+        ]
+        String assetInventory = file("ASSET_LICENSES.md").getText("UTF-8")
+        expectedBrandingHashes.each { File assetFile, String expectedHash ->
+            if (!assetFile.isFile() || sha256(assetFile) != expectedHash || !assetInventory.contains(expectedHash)) {
+                throw new GradleException("Branding asset or its inventory record changed: ${assetFile}")
+            }
+        }
+        String sourceLogoBytes = new String(
+                file("assets/branding/echo-companion-logo-source.png").bytes,
+                java.nio.charset.StandardCharsets.ISO_8859_1
+        )
+        ["c2pa.created", "gpt-image", "trainedAlgorithmicMedia", "OpenAI Media Service API"].each { String marker ->
+            if (!sourceLogoBytes.contains(marker)) {
+                throw new GradleException("Source-logo generation provenance marker changed: ${marker}")
+            }
+        }
+
+        Set<File> javaFiles = []
+        ["common", "fabric", "neoforge"].each { String moduleName ->
+            javaFiles.addAll(fileTree("${moduleName}/src") { include "**/*.java" }.files)
+        }
+        List<File> missingJavaHeaders = javaFiles.findAll { File sourceFile ->
+            !sourceFile.readLines("UTF-8").take(3).contains("// SPDX-License-Identifier: LGPL-3.0-or-later")
+        }.sort { it.path }
+        if (!missingJavaHeaders.isEmpty()) {
+            throw new GradleException("Java files missing LGPL SPDX headers: ${missingJavaHeaders}")
+        }
+
+        Map<String, String> projectScriptHeaders = [
+                "build.gradle"                                  : "// SPDX-License-Identifier: LGPL-3.0-or-later",
+                "settings.gradle"                               : "// SPDX-License-Identifier: LGPL-3.0-or-later",
+                "common/build.gradle"                           : "// SPDX-License-Identifier: LGPL-3.0-or-later",
+                "fabric/build.gradle"                           : "// SPDX-License-Identifier: LGPL-3.0-or-later",
+                "neoforge/build.gradle"                         : "// SPDX-License-Identifier: LGPL-3.0-or-later",
+                "gradle.properties"                             : "# SPDX-License-Identifier: LGPL-3.0-or-later",
+                "neoforge/gradle.properties"                    : "# SPDX-License-Identifier: LGPL-3.0-or-later",
+                ".github/scripts/publish-platforms.sh"          : "# SPDX-License-Identifier: LGPL-3.0-or-later",
+                ".github/workflows/build.yml"                   : "# SPDX-License-Identifier: LGPL-3.0-or-later",
+                ".github/workflows/dependency-submission.yml"   : "# SPDX-License-Identifier: LGPL-3.0-or-later",
+                ".github/workflows/publish-platforms.yml"       : "# SPDX-License-Identifier: LGPL-3.0-or-later"
+        ]
+        projectScriptHeaders.each { String relativePath, String header ->
+            File scriptFile = file(relativePath)
+            if (!scriptFile.isFile() || !scriptFile.readLines("UTF-8").take(4).contains(header)) {
+                throw new GradleException("Project script is missing its SPDX header: ${relativePath}")
+            }
+        }
+
+        if (rootProject.mod_license != "LGPL-3.0-or-later") {
+            throw new GradleException("mod_license must be LGPL-3.0-or-later")
+        }
+        def fabricTemplate = new groovy.json.JsonSlurper().parse(file("fabric/src/main/resources/fabric.mod.json"))
+        if (fabricTemplate.license != '${mod_license}') {
+            throw new GradleException("Fabric template must expand the shared mod_license property")
+        }
+        String neoForgeTemplate = file("neoforge/src/main/resources/META-INF/neoforge.mods.toml").getText("UTF-8")
+        if (!neoForgeTemplate.contains('license="${mod_license}"')) {
+            throw new GradleException("NeoForge template must expand the shared mod_license property")
+        }
+        String publishingScript = file(".github/scripts/publish-platforms.sh").getText("UTF-8")
+        if (!publishingScript.contains("Legacy MIT publisher: this script is pinned to v0.1.0-alpha.1") ||
+                !publishingScript.contains('.license.id == "MIT"')) {
+            throw new GradleException("The pinned legacy publisher must retain an explicit MIT-only boundary")
+        }
+
+        println "LICENSE_VERIFY=PASS java_files=${javaFiles.size()} legal_files=${expectedLegalHashes.size()} branding_assets=${expectedBrandingHashes.size()}"
+    }
+}
+
 subprojects {
     apply plugin: "dev.architectury.loom"
     apply plugin: "architectury-plugin"
@@ -26,9 +148,9 @@ subprojects {
 
     repositories {
         mavenCentral()
-        maven { url "https://maven.fabricmc.net/" }
-        maven { url "https://maven.architectury.dev/" }
-        maven { url "https://maven.neoforged.net/releases/" }
+        maven { url = uri("https://maven.fabricmc.net/") }
+        maven { url = uri("https://maven.architectury.dev/") }
+        maven { url = uri("https://maven.neoforged.net/releases/") }
     }
 
     dependencies {
@@ -45,11 +167,122 @@ subprojects {
         withSourcesJar()
     }
 
+    tasks.withType(Jar).configureEach {
+        manifest.attributes(
+                "Implementation-Title": rootProject.mod_name,
+                "Implementation-Version": project.version,
+                "SPDX-License-Identifier": rootProject.mod_license
+        )
+    }
+
+    tasks.named("sourcesJar", Jar).configure { Jar sourcesArchive ->
+        attachPackagedLegalFiles(sourcesArchive)
+    }
+
+    if (project.name == "common") {
+        tasks.named("jar", Jar).configure { Jar commonArchive ->
+            attachPackagedLegalFiles(commonArchive)
+        }
+    }
+
+    tasks.named("check").configure {
+        dependsOn rootProject.tasks.named("verifyLicensing")
+    }
+
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
         testLogging {
             events "failed", "skipped"
-            exceptionFormat "full"
+            exceptionFormat = "full"
         }
     }
+}
+
+def registerArtifactLicenseVerifier = { Project platformProject, String metadataPath ->
+    String platformName = platformProject.name
+    String expectedModLicense = rootProject.mod_license.toString()
+    Map<String, File> expectedPackagedLegalFiles = new LinkedHashMap<>(rootProject.packagedLegalFiles)
+    def remapJarProvider = platformProject.tasks.named("remapJar")
+    platformProject.tasks.register("verifyArtifactLicensing") {
+        group = "verification"
+        description = "Verifies the ${platformName} release JAR license payload and metadata."
+        dependsOn remapJarProvider
+
+        doLast {
+            File archiveFile = remapJarProvider.get().archiveFile.get().asFile
+            if (!archiveFile.isFile()) {
+                throw new GradleException("Release JAR is missing: ${archiveFile}")
+            }
+
+            java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(archiveFile)
+            try {
+                List<String> entryNames = []
+                def entries = zipFile.entries()
+                while (entries.hasMoreElements()) {
+                    entryNames.add(entries.nextElement().name)
+                }
+
+                expectedPackagedLegalFiles.each { String entryPath, File sourceFile ->
+                    int count = entryNames.count { it == entryPath }
+                    if (count != 1) {
+                        throw new GradleException("${archiveFile.name} must contain exactly one ${entryPath}; found ${count}")
+                    }
+                    byte[] packagedBytes = zipFile.getInputStream(zipFile.getEntry(entryPath)).withCloseable { it.bytes }
+                    if (!java.util.Arrays.equals(sourceFile.bytes, packagedBytes)) {
+                        throw new GradleException("${archiveFile.name} contains a modified legal file: ${entryPath}")
+                    }
+                }
+                if (entryNames.contains("META-INF/LICENSE-echo-companion")) {
+                    throw new GradleException("${archiveFile.name} still contains the legacy ambiguous license entry")
+                }
+
+                String manifestText = new String(
+                        zipFile.getInputStream(zipFile.getEntry("META-INF/MANIFEST.MF")).withCloseable { it.bytes },
+                        java.nio.charset.StandardCharsets.UTF_8
+                )
+                if (!manifestText.contains("SPDX-License-Identifier: LGPL-3.0-or-later")) {
+                    throw new GradleException("${archiveFile.name} manifest is missing the SPDX license identifier")
+                }
+
+                String metadataText = new String(
+                        zipFile.getInputStream(zipFile.getEntry(metadataPath)).withCloseable { it.bytes },
+                        java.nio.charset.StandardCharsets.UTF_8
+                )
+                if (platformName == "fabric") {
+                    def metadata = new groovy.json.JsonSlurper().parseText(metadataText)
+                    if (metadata.license != expectedModLicense) {
+                        throw new GradleException("Fabric release metadata has license ${metadata.license}")
+                    }
+                } else if (!metadataText.contains('license="LGPL-3.0-or-later"')) {
+                    throw new GradleException("NeoForge release metadata does not declare LGPL-3.0-or-later")
+                }
+
+                List<String> forbiddenEmbeddedPrefixes = [
+                        "org/junit/",
+                        "net/fabricmc/loader/",
+                        "net/neoforged/",
+                        "com/google/gson/"
+                ]
+                List<String> forbiddenEmbeddedEntries = entryNames.findAll { String entryName ->
+                    forbiddenEmbeddedPrefixes.any { String prefix -> entryName.startsWith(prefix) }
+                }
+                if (!forbiddenEmbeddedEntries.isEmpty()) {
+                    throw new GradleException("${archiveFile.name} unexpectedly embeds external dependencies: ${forbiddenEmbeddedEntries.take(10)}")
+                }
+
+                println "ARTIFACT_LICENSE_VERIFY=PASS platform=${platformName} jar=${archiveFile.name} entries=${entryNames.size()}"
+            } finally {
+                zipFile.close()
+            }
+        }
+    }
+}
+
+registerArtifactLicenseVerifier(project(":fabric"), "fabric.mod.json")
+registerArtifactLicenseVerifier(project(":neoforge"), "META-INF/neoforge.mods.toml")
+
+tasks.register("verifyModArtifacts") {
+    group = "verification"
+    description = "Verifies legal payloads and metadata in both loader release JARs."
+    dependsOn ":fabric:verifyArtifactLicensing", ":neoforge:verifyArtifactLicensing"
 }
