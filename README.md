@@ -139,13 +139,13 @@ JDK 21 is required. The repository includes the Gradle Wrapper, so a separate Gr
 Windows PowerShell:
 
 ```powershell
-.\gradlew.bat clean test build
+.\gradlew.bat clean test build verifyModArtifacts
 ```
 
 Linux / macOS:
 
 ```bash
-./gradlew clean test build
+./gradlew clean test build verifyModArtifacts
 ```
 
 You can also run each task separately:
@@ -154,6 +154,7 @@ You can also run each task separately:
 .\gradlew.bat :common:test
 .\gradlew.bat :fabric:build
 .\gradlew.bat :neoforge:build
+.\gradlew.bat verifyLicensing verifyModArtifacts
 ```
 
 Build artifacts are written to `fabric/build/libs/` and `neoforge/build/libs/`. For releases, use the remapped JARs whose filenames do not include the `-sources` or `-dev-shadow` suffix.
@@ -244,8 +245,16 @@ Before submitting an Issue or Pull Request, please read the [contribution guide]
 
 ### English
 
-This project is open-sourced under the [MIT License](LICENSE). The license covers only original content contributed to this repository and does not grant any rights to third-party games, mods, brands, or materials.
+Project-authored code, tests, build/CI configuration, functional data, translations, and documentation in current and future revisions are licensed under [LGPL-3.0-or-later](LICENSE). Original non-brand visual and audio media added to the project use [CC-BY-SA-4.0](LICENSES/CC-BY-SA-4.0.txt). The repository currently contains no media in that CC scope.
+
+Branding and logos, including `assets/branding/**`, are not automatically CC-licensed and do not grant trademark rights. Unmodified official packages may be redistributed intact under the limited branding terms in the [license policy](LICENSE_POLICY.md); fixed hashes and available provenance are in the [asset inventory](ASSET_LICENSES.md). Third-party material retains its original terms; see the [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Commit `569b02de7c2dfc6e3ea583855485c07098541f72` and earlier revisions, including `v0.1.0-alpha.1`, were released under MIT. Rights already granted for those historical copies remain in force and are not withdrawn. The transition does not make later changes available under MIT.
 
 ### 中文
 
-本项目以 [MIT License](LICENSE) 开源。该许可证仅覆盖本仓库中由项目贡献者提供的原创内容，不授予任何第三方游戏、模组、品牌或素材的权利。
+当前及未来修订中的项目原创代码、测试、构建/CI 配置、功能性数据、翻译与文档采用 [LGPL-3.0-or-later](LICENSE)。项目新增的原创非品牌美术与音频采用 [CC-BY-SA-4.0](LICENSES/CC-BY-SA-4.0.txt)；当前仓库尚无归入该 CC 范围的媒体。
+
+包括 `assets/branding/**` 在内的品牌与 Logo 不会自动采用 CC，也不授予商标权。未经修改的官方包可按[许可证政策](LICENSE_POLICY.md)中的有限品牌条款完整再分发；固定哈希与现有来源证据见[资产清单](ASSET_LICENSES.md)。第三方内容保留原始条款，详见[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 及更早修订（包括 `v0.1.0-alpha.1`）曾按 MIT 发布。对这些历史副本已经授予的权利继续有效且不会撤回；迁移不代表后续新增改动仍可按 MIT 使用。

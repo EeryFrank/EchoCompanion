@@ -34,6 +34,30 @@ java -version
 
 任何失败、跳过或缓存导致的不确定结果都应在发布前处理；需要新鲜证据时可增加 `--rerun-tasks`。
 
+### 许可证门禁
+
+许可证迁移后的候选版本还必须执行：
+
+```powershell
+.\gradlew.bat verifyLicensing verifyModArtifacts
+```
+
+```bash
+./gradlew verifyLicensing verifyModArtifacts
+```
+
+`verifyLicensing` 核对标准许可证正文的固定 SHA-256、项目 Java/脚本 SPDX、共享 `mod_license` 和两个加载器模板。`verifyModArtifacts` 会重新构建并分别检查 Fabric 与 NeoForge 最终 JAR，要求：
+
+- Fabric 与 NeoForge 元数据均为 `LGPL-3.0-or-later`；
+- Manifest 含相同 SPDX 标识；
+- 项目 LGPL、CC、许可证政策和第三方声明在每个最终 JAR 中各出现一次，且与仓库文件逐字节一致；
+- 不再出现旧的模糊路径 `META-INF/LICENSE-echo-companion`；
+- 不意外嵌入 Fabric Loader、NeoForge、JUnit 或 Gson 类。
+
+还应人工复核 `LICENSE_POLICY.md` 和 `THIRD_PARTY_NOTICES.md` 是否覆盖本次新增依赖、媒体与品牌内容。新增非品牌原创媒体默认采用 `CC-BY-SA-4.0`；品牌与 Logo 不自动采用 CC。官方源码归档与发布包中的品牌可保持原样随完整官方包再分发，但不得据此暗示分支项目获得官方认可。
+
+提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 以及更早修订属于历史 MIT 范围，`v0.1.0-alpha.1` 继续适用其随附 MIT 条款。不得替换旧发布资产中的许可证、重写旧标签，或宣称已经撤回历史 MIT 授权。迁移后发布说明必须明确新版本采用 LGPL/CC 范围，并单独保留旧版本说明。
+
 ### Windows 中文路径说明
 
 部分 Windows 环境中的 Gradle test worker 无法正确处理含中文字符的绝对 classpath，症状是所有已编译测试类都报告 `ClassNotFoundException`。这类环境问题仍然是一次失败，不能当作测试通过。先确认准备使用的盘符未被占用，再从临时 ASCII 盘符重新运行，并确保最终解除映射：
@@ -107,6 +131,9 @@ sha256sum fabric/build/libs/*.jar neoforge/build/libs/*.jar
 4. 审核 CI 日志与下载产物；不要仅依据绿色状态跳过游戏内验收。
 5. 创建与版本一致的标签（例如 `v0.1.0`）和 GitHub Release，附加两个最终 JAR 与 SHA-256。
 6. 在发布说明中披露 API Key 明文记忆行为、REMOTE 的第三方数据传输，并使用“模组玩法受 Verity 启发 / The mod's gameplay is inspired by Verity”说明灵感来源，同时保留独立原创实现及不复制、打包或再分发 Verity / ARR 代码与资产的边界。
+7. 在 GitHub、Modrinth 与 CurseForge 的新版本正文中同步 `LGPL-3.0-or-later`、CC 媒体范围、品牌边界和历史 MIT 例外；发布前回读平台页面，不能只检查仓库元数据。
+
+现有 `.github/workflows/publish-platforms.yml` 与 `.github/scripts/publish-platforms.sh` 只锁定 `v0.1.0-alpha.1` 的历史 MIT 文件、哈希和平台状态。它们不得用于迁移后的 LGPL 版本。首次发布新许可证版本前，必须为新标签建立独立审计的发布输入，并先把 Modrinth/CurseForge 项目级许可证与说明更新为当前范围；若平台只能显示一个项目级许可证，页面正文必须继续明确 `v0.1.0-alpha.1` 的 MIT 历史权利不撤回。
 
 ## Modrinth 与 CurseForge 发布凭据
 

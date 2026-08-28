@@ -115,3 +115,7 @@ Echo Companion 当前没有自定义客户端到服务器的数据包，也没�
 ## 原创与第三方内容
 
 本仓库的实现、文本和界面应保持原创。模组玩法受 Verity 启发，但 Verity / ARR 均不作为代码、文本或资产来源；不得复制、打包或再分发其代码、资源、对话、模型、纹理、声音、UI、名称或品牌元素。任何新增第三方依赖或素材都应记录来源、许可证与再分发条件。
+
+项目原创代码、功能性数据与文档采用 `LGPL-3.0-or-later`；未来新增的原创非品牌媒体采用 `CC-BY-SA-4.0`。品牌、Logo 与历史 MIT 版本不归入该默认 CC 范围。完整路径边界见根目录 `LICENSE_POLICY.md`，依赖与第三方再分发状态见 `THIRD_PARTY_NOTICES.md`。
+
+两个发布 JAR 只通过 `shadowBundle` 打入项目自有的 `common` 输出。Fabric Loader、NeoForge、Minecraft、Gson、构建插件和 JUnit 由外部环境提供，不嵌入发布 JAR；构建后的许可证审计会检查这一边界。

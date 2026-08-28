@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 package dev.echoai.companion.mixin;
 
 import dev.echoai.companion.client.gui.EchoSettingsScreen;

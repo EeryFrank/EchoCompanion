@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 architectury {
     common(rootProject.enabled_platforms.split(","))
 }
@@ -8,11 +10,4 @@ dependencies {
     testImplementation platform("org.junit:junit-bom:5.11.4")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-}
-
-tasks.named("jar", Jar) {
-    from(rootProject.file("LICENSE")) {
-        into "META-INF"
-        rename { "LICENSE-echo-companion" }
-    }
 }

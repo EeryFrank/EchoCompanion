@@ -6,7 +6,7 @@
   "description": "An original switchable scripted/remote AI companion for Minecraft.",
   "authors": ["Echo Companion Contributors"],
   "contact": {},
-  "license": "MIT",
+  "license": "${mod_license}",
   "environment": "client",
   "entrypoints": {
     "client": [

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 plugins {
     id "com.github.johnrengelman.shadow"
 }
@@ -18,16 +20,23 @@ configurations {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
 
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowBundle(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+    shadowBundle(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }
 }
 
+def expandedVersion = project.version
+def expandedMinecraftVersion = rootProject.minecraft_version
+def expandedModLicense = rootProject.mod_license
+
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", rootProject.minecraft_version
+    inputs.property "version", expandedVersion
+    inputs.property "minecraft_version", expandedMinecraftVersion
+    inputs.property "mod_license", expandedModLicense
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version, "minecraft_version": rootProject.minecraft_version
+        expand "version": expandedVersion,
+                "minecraft_version": expandedMinecraftVersion,
+                "mod_license": expandedModLicense
     }
 }
 
