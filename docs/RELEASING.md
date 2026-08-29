@@ -48,15 +48,15 @@ java -version
 
 `verifyLicensing` 核对标准许可证正文的固定 SHA-256、项目 Java/脚本 SPDX、共享 `mod_license` 和两个加载器模板。`verifyModArtifacts` 会重新构建并分别检查 Fabric 与 NeoForge 最终 JAR，要求：
 
-- Fabric 与 NeoForge 元数据均为 `LGPL-3.0-or-later`；
+- Fabric 与 NeoForge 元数据均为 `GPL-3.0-only`；
 - Manifest 含相同 SPDX 标识；
-- 项目 LGPL、CC、许可证政策和第三方声明在每个最终 JAR 中各出现一次，且与仓库文件逐字节一致；
+- 项目 GPL 正文、资产 LicenseRef 条款、许可证政策和第三方声明在每个最终 JAR 中各出现一次，且与仓库文件逐字节一致；
 - 不再出现旧的模糊路径 `META-INF/LICENSE-echo-companion`；
 - 不意外嵌入 Fabric Loader、NeoForge、JUnit 或 Gson 类。
 
-还应人工复核 `LICENSE_POLICY.md` 和 `THIRD_PARTY_NOTICES.md` 是否覆盖本次新增依赖、媒体与品牌内容。新增非品牌原创媒体默认采用 `CC-BY-SA-4.0`；品牌与 Logo 不自动采用 CC。官方源码归档与发布包中的品牌可保持原样随完整官方包再分发，但不得据此暗示分支项目获得官方认可。
+还应人工复核 `LICENSE_POLICY.md`、`ASSET_LICENSES.md` 和 `THIRD_PARTY_NOTICES.md` 是否覆盖本次新增依赖、媒体与品牌内容。新增视觉、音频与品牌资产必须先完成来源、输入和权利核验，并取得书面授权；若无其他明确许可，则采用 `LicenseRef-EeryFrank-Assets-Permission-Required`。该 LicenseRef 仅允许未修改资产随未经修改的官方完整包分发，独立提取、复用、修改、再分发、商业或品牌使用均需事先书面授权。
 
-提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 以及更早修订属于历史 MIT 范围，`v0.1.0-alpha.1` 继续适用其随附 MIT 条款。不得替换旧发布资产中的许可证、重写旧标签，或宣称已经撤回历史 MIT 授权。迁移后发布说明必须明确新版本采用 LGPL/CC 范围，并单独保留旧版本说明。
+提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 以及更早修订属于历史 MIT 范围，`v0.1.0-alpha.1` 继续适用其随附 MIT 条款；其后的公开修订至基线 `d713ba3144270d3daa8932c7a25c934251b89312` 保留既有 LGPL 授权。不得替换旧发布资产中的许可证、重写旧标签，或宣称已经撤回历史 MIT/LGPL 授权。新版本发布说明必须明确源码采用 GPL、未来新增资产采用 LicenseRef、现有两张 Logo 保留 MIT，并单独保留旧版本说明。
 
 ### Windows 中文路径说明
 
@@ -131,9 +131,9 @@ sha256sum fabric/build/libs/*.jar neoforge/build/libs/*.jar
 4. 审核 CI 日志与下载产物；不要仅依据绿色状态跳过游戏内验收。
 5. 创建与版本一致的标签（例如 `v0.1.0`）和 GitHub Release，附加两个最终 JAR 与 SHA-256。
 6. 在发布说明中披露 API Key 明文记忆行为、REMOTE 的第三方数据传输，并使用“模组玩法受 Verity 启发 / The mod's gameplay is inspired by Verity”说明灵感来源，同时保留独立原创实现及不复制、打包或再分发 Verity / ARR 代码与资产的边界。
-7. 在 GitHub、Modrinth 与 CurseForge 的新版本正文中同步 `LGPL-3.0-or-later`、CC 媒体范围、品牌边界和历史 MIT 例外；发布前回读平台页面，不能只检查仓库元数据。
+7. 在 GitHub、Modrinth 与 CurseForge 的新版本正文中同步 `GPL-3.0-only`、资产 LicenseRef、现有 MIT 资产边界及历史 MIT/LGPL 例外；发布前回读平台页面，不能只检查仓库元数据。
 
-现有 `.github/workflows/publish-platforms.yml` 与 `.github/scripts/publish-platforms.sh` 只锁定 `v0.1.0-alpha.1` 的历史 MIT 文件、哈希和平台状态。它们不得用于迁移后的 LGPL 版本。首次发布新许可证版本前，必须为新标签建立独立审计的发布输入，并先把 Modrinth/CurseForge 项目级许可证与说明更新为当前范围；若平台只能显示一个项目级许可证，页面正文必须继续明确 `v0.1.0-alpha.1` 的 MIT 历史权利不撤回。
+现有 `.github/workflows/publish-platforms.yml` 与 `.github/scripts/publish-platforms.sh` 只锁定 `v0.1.0-alpha.1` 的历史 MIT 文件、哈希和平台状态。它们不得用于任何后续 LGPL 或 GPL 版本。首次发布新许可证版本前，必须为新标签建立独立审计的发布输入，并先把 Modrinth/CurseForge 项目级许可证与说明更新为当前范围；若平台只能显示一个项目级许可证，页面正文必须继续明确历史 MIT/LGPL 权利不撤回。
 
 ## Modrinth 与 CurseForge 发布凭据
 

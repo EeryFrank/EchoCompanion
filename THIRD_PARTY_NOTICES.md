@@ -10,13 +10,17 @@ Echo Companion 不会重新授权第三方软件、游戏内容、服务、名�
 | --- | --- | --- | --- | --- |
 | Gradle Wrapper / Gradle | 8.14.1 | Apache-2.0 | `gradlew`, `gradlew.bat`, `gradle/wrapper/**` | <https://github.com/gradle/gradle> |
 
-The Apache-2.0 text used for the redistributed Gradle Wrapper is stored at [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt). The generated wrapper files retain their upstream headers and are excluded from the project's LGPL source-header requirement.
+The Apache-2.0 text used for the redistributed Gradle Wrapper is stored at [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt). The generated wrapper files retain their upstream headers and are excluded from the project's GPL source-header requirement.
 
-随仓库再分发的 Gradle Wrapper 所适用的 Apache-2.0 正文见 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)。生成的 Wrapper 文件保留上游文件头，不纳入项目 LGPL 源码文件头检查。
+随仓库再分发的 Gradle Wrapper 所适用的 Apache-2.0 正文见 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)。生成的 Wrapper 文件保留上游文件头，不纳入项目 GPL 源码文件头检查。
 
 The MIT text at [LICENSES/MIT.txt](LICENSES/MIT.txt) preserves Echo Companion's own historical grants and the terms previously applied to the two baseline logo files. It is not a third-party dependency license.
 
 [LICENSES/MIT.txt](LICENSES/MIT.txt) 中的 MIT 正文用于保留 Echo Companion 自身的历史授权，以及迁移基线中两个 Logo 文件此前适用的条款；它不是第三方依赖许可证。
+
+The preserved [LGPL-3.0-or-later text](LICENSES/LGPL-3.0-or-later.txt) records the project's earlier public grant through baseline `d713ba3144270d3daa8932c7a25c934251b89312`. It is historical project licensing, not a dependency license. [LICENSES/CC-BY-SA-4.0.txt](LICENSES/CC-BY-SA-4.0.txt) likewise remains only as a record of the previous asset policy; no current asset is assigned to it.
+
+保留的 [LGPL-3.0-or-later 正文](LICENSES/LGPL-3.0-or-later.txt) 记录项目截至基线 `d713ba3144270d3daa8932c7a25c934251b89312` 的早期公开授权；它属于项目历史许可，不是依赖许可证。[LICENSES/CC-BY-SA-4.0.txt](LICENSES/CC-BY-SA-4.0.txt) 同样仅用于记录上一版资产政策，当前没有资产被登记在该许可范围内。
 
 ## Build, test, and runtime dependencies not bundled in release JARs / 不打入发布 JAR 的构建、测试与运行依赖
 

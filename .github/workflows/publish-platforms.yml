@@ -1,7 +1,7 @@
-# SPDX-License-Identifier: LGPL-3.0-or-later
+# SPDX-License-Identifier: GPL-3.0-only
 
 # This workflow is intentionally pinned to the legacy MIT alpha release.
-# A later LGPL release must use separately audited inputs and platform metadata.
+# Any later LGPL or GPL release must use separately audited inputs and platform metadata.
 name: Publish legacy alpha platform release
 
 run-name: ${{ inputs.mode }} ${{ inputs.platform }} ${{ inputs.tag }}
