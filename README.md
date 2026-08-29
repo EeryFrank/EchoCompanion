@@ -245,16 +245,16 @@ Before submitting an Issue or Pull Request, please read the [contribution guide]
 
 ### English
 
-Project-authored code, tests, build/CI configuration, functional data, translations, and documentation in current and future revisions are licensed under [LGPL-3.0-or-later](LICENSE). Original non-brand visual and audio media added to the project use [CC-BY-SA-4.0](LICENSES/CC-BY-SA-4.0.txt). The repository currently contains no media in that CC scope.
+Beginning with the GPL policy commit, project-authored code, tests, build/CI configuration, functional data, translations, and documentation are licensed under [GPL-3.0-only](LICENSE). New project-owned visual, audio, or branding assets receive no automatic open-content license: after provenance and rights review they must be inventoried, and otherwise use [LicenseRef-EeryFrank-Assets-Permission-Required](LICENSES/LicenseRef-EeryFrank-Assets-Permission-Required.txt). That LicenseRef permits an unmodified asset to travel only inside an unmodified official package; standalone extraction, reuse, modification, redistribution, commercial use, or branding use requires prior written permission.
 
-Branding and logos, including `assets/branding/**`, are not automatically CC-licensed and do not grant trademark rights. Unmodified official packages may be redistributed intact under the limited branding terms in the [license policy](LICENSE_POLICY.md); fixed hashes and available provenance are in the [asset inventory](ASSET_LICENSES.md). Third-party material retains its original terms; see the [third-party notices](THIRD_PARTY_NOTICES.md).
+The two existing `assets/branding/**` logo files keep their historical MIT copyright grants, fixed hashes, provenance record, and separate trademark boundary; they are not relicensed. Third-party material retains its original terms; see the [license policy](LICENSE_POLICY.md), [asset inventory](ASSET_LICENSES.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Commit `569b02de7c2dfc6e3ea583855485c07098541f72` and earlier revisions, including `v0.1.0-alpha.1`, were released under MIT. Rights already granted for those historical copies remain in force and are not withdrawn. The transition does not make later changes available under MIT.
+Commit `569b02de7c2dfc6e3ea583855485c07098541f72` and earlier revisions, including `v0.1.0-alpha.1`, were released under MIT. Later public revisions through baseline `d713ba3144270d3daa8932c7a25c934251b89312` were offered under LGPL-3.0-or-later. Those historical grants remain in force for the copies to which they applied and are not withdrawn by the GPL transition.
 
 ### 中文
 
-当前及未来修订中的项目原创代码、测试、构建/CI 配置、功能性数据、翻译与文档采用 [LGPL-3.0-or-later](LICENSE)。项目新增的原创非品牌美术与音频采用 [CC-BY-SA-4.0](LICENSES/CC-BY-SA-4.0.txt)；当前仓库尚无归入该 CC 范围的媒体。
+自 GPL 政策提交起，项目原创代码、测试、构建/CI 配置、功能性数据、翻译与文档采用 [GPL-3.0-only](LICENSE)。新增的项目自有视觉、音频或品牌资产不会自动获得开放内容许可：完成来源和权利核验并登记后，若无其他明确授权，则使用 [LicenseRef-EeryFrank-Assets-Permission-Required](LICENSES/LicenseRef-EeryFrank-Assets-Permission-Required.txt)。该 LicenseRef 仅允许未修改资产随未经修改的官方完整包分发；单独提取、复用、修改、再分发、商业或品牌使用均须事先书面授权。
 
-包括 `assets/branding/**` 在内的品牌与 Logo 不会自动采用 CC，也不授予商标权。未经修改的官方包可按[许可证政策](LICENSE_POLICY.md)中的有限品牌条款完整再分发；固定哈希与现有来源证据见[资产清单](ASSET_LICENSES.md)。第三方内容保留原始条款，详见[第三方声明](THIRD_PARTY_NOTICES.md)。
+现有两张 `assets/branding/**` Logo 继续保留历史 MIT 著作权授权、固定哈希、来源记录及单独的商标边界，不会被重新授权。第三方内容保留原始条款，详见[许可证政策](LICENSE_POLICY.md)、[资产清单](ASSET_LICENSES.md)和[第三方声明](THIRD_PARTY_NOTICES.md)。
 
-提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 及更早修订（包括 `v0.1.0-alpha.1`）曾按 MIT 发布。对这些历史副本已经授予的权利继续有效且不会撤回；迁移不代表后续新增改动仍可按 MIT 使用。
+提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 及更早修订（包括 `v0.1.0-alpha.1`）曾按 MIT 发布；其后的公开修订至基线 `d713ba3144270d3daa8932c7a25c934251b89312` 曾按 LGPL-3.0-or-later 提供。这些历史授权对其适用副本继续有效，不因 GPL 迁移而撤回。

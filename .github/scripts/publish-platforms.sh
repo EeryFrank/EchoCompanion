@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: LGPL-3.0-or-later
+# SPDX-License-Identifier: GPL-3.0-only
 
 # Legacy MIT publisher: this script is pinned to v0.1.0-alpha.1 and its exact
 # historical artifacts. Its MIT checks are intentional and must not be reused
-# for a post-migration LGPL release without a separate release audit.
+# for any post-MIT release (including LGPL or GPL) without a separate release audit.
 
 set -Eeuo pipefail
 shopt -s inherit_errexit

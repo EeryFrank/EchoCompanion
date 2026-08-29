@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-only
 
 plugins {
     id "dev.architectury.loom" version "1.11.456" apply false
@@ -18,10 +18,10 @@ allprojects {
 }
 
 ext.packagedLegalFiles = [
-        "META-INF/LICENSE-echo-companion-LGPL-3.0-or-later.txt": file("LICENSE"),
-        "META-INF/LICENSE-echo-companion-CC-BY-SA-4.0.txt"    : file("LICENSES/CC-BY-SA-4.0.txt"),
-        "META-INF/LICENSE-POLICY-echo-companion.md"           : file("LICENSE_POLICY.md"),
-        "META-INF/THIRD-PARTY-NOTICES-echo-companion.md"      : file("THIRD_PARTY_NOTICES.md")
+        "META-INF/LICENSE-echo-companion-GPL-3.0-only.txt"                    : file("LICENSE"),
+        "META-INF/LICENSE-echo-companion-ASSETS-PERMISSION-REQUIRED.txt"      : file("LICENSES/LicenseRef-EeryFrank-Assets-Permission-Required.txt"),
+        "META-INF/LICENSE-POLICY-echo-companion.md"                           : file("LICENSE_POLICY.md"),
+        "META-INF/THIRD-PARTY-NOTICES-echo-companion.md"                      : file("THIRD_PARTY_NOTICES.md")
 ]
 
 def attachPackagedLegalFiles = { Jar archiveTask ->
@@ -50,10 +50,12 @@ tasks.register("verifyLicensing") {
 
     doLast {
         Map<File, String> expectedLegalHashes = [
-                (file("LICENSE"))                         : "996AF0513DF21F7496288951C41428A03C174E9E4A9D63665C57D670F845CCB1",
-                (file("LICENSES/CC-BY-SA-4.0.txt"))      : "CDE7883B9050A1104F4AC19A1572AAFD6E5D7323B68351AAF51FBF4BEBA54966",
-                (file("LICENSES/Apache-2.0.txt"))        : "074E6E32C86A4C0EF8B3ED25B721CA23ACA83DF277CD88106EF7177C354615FF",
-                (file("LICENSES/MIT.txt"))               : "B23ACF9F125C894006F600C045CC1EA277ABD652BD59B5001BE8D472BD4E9D92"
+                (file("LICENSE"))                                                    : "FB981668C18A279E285FC4D83FBA1E836CC84DD4DAA73C9697D3CFD2D8ACA6E0",
+                (file("LICENSES/LGPL-3.0-or-later.txt"))                            : "996AF0513DF21F7496288951C41428A03C174E9E4A9D63665C57D670F845CCB1",
+                (file("LICENSES/LicenseRef-EeryFrank-Assets-Permission-Required.txt")): "A929DBAC5C7201B3E43BF186B097710B651F8B1D351BFAB39CD8308D92503CF0",
+                (file("LICENSES/CC-BY-SA-4.0.txt"))                                 : "CDE7883B9050A1104F4AC19A1572AAFD6E5D7323B68351AAF51FBF4BEBA54966",
+                (file("LICENSES/Apache-2.0.txt"))                                   : "074E6E32C86A4C0EF8B3ED25B721CA23ACA83DF277CD88106EF7177C354615FF",
+                (file("LICENSES/MIT.txt"))                                          : "B23ACF9F125C894006F600C045CC1EA277ABD652BD59B5001BE8D472BD4E9D92"
         ]
         expectedLegalHashes.each { File legalFile, String expectedHash ->
             if (!legalFile.isFile()) {
@@ -70,6 +72,20 @@ tasks.register("verifyLicensing") {
                 (file("assets/branding/echo-companion-logo-512.png"))   : "188343D5F8A4977C265CF894EEDBE27C4FAD06DB4EC1E9FA30E526952176660D"
         ]
         String assetInventory = file("ASSET_LICENSES.md").getText("UTF-8")
+        String licensePolicy = file("LICENSE_POLICY.md").getText("UTF-8")
+        [
+                "GPL-3.0-only",
+                "LicenseRef-EeryFrank-Assets-Permission-Required",
+                "d713ba3144270d3daa8932c7a25c934251b89312"
+        ].each { String policyMarker ->
+            if (!licensePolicy.contains(policyMarker)) {
+                throw new GradleException("License policy is missing required boundary marker: ${policyMarker}")
+            }
+        }
+        if (!assetInventory.contains("No current asset uses that LicenseRef") ||
+                !assetInventory.contains("Historical MIT grant")) {
+            throw new GradleException("Asset inventory no longer preserves the current MIT/no-LicenseRef boundary")
+        }
         expectedBrandingHashes.each { File assetFile, String expectedHash ->
             if (!assetFile.isFile() || sha256(assetFile) != expectedHash || !assetInventory.contains(expectedHash)) {
                 throw new GradleException("Branding asset or its inventory record changed: ${assetFile}")
@@ -90,24 +106,24 @@ tasks.register("verifyLicensing") {
             javaFiles.addAll(fileTree("${moduleName}/src") { include "**/*.java" }.files)
         }
         List<File> missingJavaHeaders = javaFiles.findAll { File sourceFile ->
-            !sourceFile.readLines("UTF-8").take(3).contains("// SPDX-License-Identifier: LGPL-3.0-or-later")
+            !sourceFile.readLines("UTF-8").take(3).contains("// SPDX-License-Identifier: GPL-3.0-only")
         }.sort { it.path }
         if (!missingJavaHeaders.isEmpty()) {
-            throw new GradleException("Java files missing LGPL SPDX headers: ${missingJavaHeaders}")
+            throw new GradleException("Java files missing GPL SPDX headers: ${missingJavaHeaders}")
         }
 
         Map<String, String> projectScriptHeaders = [
-                "build.gradle"                                  : "// SPDX-License-Identifier: LGPL-3.0-or-later",
-                "settings.gradle"                               : "// SPDX-License-Identifier: LGPL-3.0-or-later",
-                "common/build.gradle"                           : "// SPDX-License-Identifier: LGPL-3.0-or-later",
-                "fabric/build.gradle"                           : "// SPDX-License-Identifier: LGPL-3.0-or-later",
-                "neoforge/build.gradle"                         : "// SPDX-License-Identifier: LGPL-3.0-or-later",
-                "gradle.properties"                             : "# SPDX-License-Identifier: LGPL-3.0-or-later",
-                "neoforge/gradle.properties"                    : "# SPDX-License-Identifier: LGPL-3.0-or-later",
-                ".github/scripts/publish-platforms.sh"          : "# SPDX-License-Identifier: LGPL-3.0-or-later",
-                ".github/workflows/build.yml"                   : "# SPDX-License-Identifier: LGPL-3.0-or-later",
-                ".github/workflows/dependency-submission.yml"   : "# SPDX-License-Identifier: LGPL-3.0-or-later",
-                ".github/workflows/publish-platforms.yml"       : "# SPDX-License-Identifier: LGPL-3.0-or-later"
+                "build.gradle"                                  : "// SPDX-License-Identifier: GPL-3.0-only",
+                "settings.gradle"                               : "// SPDX-License-Identifier: GPL-3.0-only",
+                "common/build.gradle"                           : "// SPDX-License-Identifier: GPL-3.0-only",
+                "fabric/build.gradle"                           : "// SPDX-License-Identifier: GPL-3.0-only",
+                "neoforge/build.gradle"                         : "// SPDX-License-Identifier: GPL-3.0-only",
+                "gradle.properties"                             : "# SPDX-License-Identifier: GPL-3.0-only",
+                "neoforge/gradle.properties"                    : "# SPDX-License-Identifier: GPL-3.0-only",
+                ".github/scripts/publish-platforms.sh"          : "# SPDX-License-Identifier: GPL-3.0-only",
+                ".github/workflows/build.yml"                   : "# SPDX-License-Identifier: GPL-3.0-only",
+                ".github/workflows/dependency-submission.yml"   : "# SPDX-License-Identifier: GPL-3.0-only",
+                ".github/workflows/publish-platforms.yml"       : "# SPDX-License-Identifier: GPL-3.0-only"
         ]
         projectScriptHeaders.each { String relativePath, String header ->
             File scriptFile = file(relativePath)
@@ -116,8 +132,8 @@ tasks.register("verifyLicensing") {
             }
         }
 
-        if (rootProject.mod_license != "LGPL-3.0-or-later") {
-            throw new GradleException("mod_license must be LGPL-3.0-or-later")
+        if (rootProject.mod_license != "GPL-3.0-only") {
+            throw new GradleException("mod_license must be GPL-3.0-only")
         }
         def fabricTemplate = new groovy.json.JsonSlurper().parse(file("fabric/src/main/resources/fabric.mod.json"))
         if (fabricTemplate.license != '${mod_license}') {
@@ -232,15 +248,21 @@ def registerArtifactLicenseVerifier = { Project platformProject, String metadata
                         throw new GradleException("${archiveFile.name} contains a modified legal file: ${entryPath}")
                     }
                 }
-                if (entryNames.contains("META-INF/LICENSE-echo-companion")) {
-                    throw new GradleException("${archiveFile.name} still contains the legacy ambiguous license entry")
+                [
+                        "META-INF/LICENSE-echo-companion",
+                        "META-INF/LICENSE-echo-companion-LGPL-3.0-or-later.txt",
+                        "META-INF/LICENSE-echo-companion-CC-BY-SA-4.0.txt"
+                ].each { String legacyEntry ->
+                    if (entryNames.contains(legacyEntry)) {
+                        throw new GradleException("${archiveFile.name} still contains legacy legal entry ${legacyEntry}")
+                    }
                 }
 
                 String manifestText = new String(
                         zipFile.getInputStream(zipFile.getEntry("META-INF/MANIFEST.MF")).withCloseable { it.bytes },
                         java.nio.charset.StandardCharsets.UTF_8
                 )
-                if (!manifestText.contains("SPDX-License-Identifier: LGPL-3.0-or-later")) {
+                if (!manifestText.contains("SPDX-License-Identifier: GPL-3.0-only")) {
                     throw new GradleException("${archiveFile.name} manifest is missing the SPDX license identifier")
                 }
 
@@ -253,8 +275,8 @@ def registerArtifactLicenseVerifier = { Project platformProject, String metadata
                     if (metadata.license != expectedModLicense) {
                         throw new GradleException("Fabric release metadata has license ${metadata.license}")
                     }
-                } else if (!metadataText.contains('license="LGPL-3.0-or-later"')) {
-                    throw new GradleException("NeoForge release metadata does not declare LGPL-3.0-or-later")
+                } else if (!metadataText.contains('license="GPL-3.0-only"')) {
+                    throw new GradleException("NeoForge release metadata does not declare GPL-3.0-only")
                 }
 
                 List<String> forbiddenEmbeddedPrefixes = [

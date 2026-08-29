@@ -1,6 +1,17 @@
 # 许可证迁移记录
 
-## 范围与基线
+## 2026-08-29 GPL 源码与受限资产政策
+
+- 当前及未来的项目原创源码、测试、构建/CI 配置、功能性数据、翻译与文档改为 `GPL-3.0-only`；根目录 `LICENSE` 为未经修改的 SPDX License List Data `v3.28.0` 官方 GPLv3 正文。
+- 新增项目自有视觉、音频或品牌资产不会因目录或提交而自动获得开放内容授权；完成来源、权利和书面授权核验并在 `ASSET_LICENSES.md` 明确登记后，若没有其他经授权许可，则使用 `LicenseRef-EeryFrank-Assets-Permission-Required`。
+- 该 LicenseRef 只允许未修改资产随未经修改的官方发布包完整分发；单独提取、复用、修改、再分发、商业或品牌使用须事先取得 EeryFrank 的书面授权。
+- 现有两张 Logo 继续适用历史 MIT 条款及单独的品牌/商标边界；当前没有 LicenseRef 或 CC BY-SA 资产。第三方、Gradle Wrapper、Minecraft 与官方映射继续适用各自原始条款。
+- 提交 `569b02de7c2dfc6e3ea583855485c07098541f72` 及更早版本的 MIT 授权，以及后续公开修订至 `d713ba3144270d3daa8932c7a25c934251b89312` 的 LGPL 授权，对其原适用副本继续有效；本次变更不重写标签、Release 或历史许可。
+- 当前门禁核对 GPL、历史 LGPL、MIT、旧 CC、Apache 和资产 LicenseRef 的固定正文，要求所有项目源码/脚本使用 GPL SPDX，并检查最终 JAR 的 GPL、LicenseRef、政策与第三方声明条目。
+
+本节的实际验证结果应以执行本次政策分支上的 `verifyLicensing`、`clean test build verifyModArtifacts --rerun-tasks` 和独立 JAR 审计输出为准；下节保留 2026-08-28 迁移的历史证据，不代表当前 GPL 候选包的验证结果。
+
+## 2026-08-28 历史 MIT→LGPL 迁移范围与基线
 
 - 迁移前基线：`569b02de7c2dfc6e3ea583855485c07098541f72`
 - 基线核对：本地 `main`、GitHub `main` 与 GitLab `main` 指向同一提交，迁移从该提交建立独立分支。
@@ -9,7 +20,7 @@
 
 迁移不会撤回历史 MIT 版本已授予的权利。`v0.1.0-alpha.1` 及只由迁移前提交产生的历史包继续按其随附 MIT 条款使用。
 
-## 内容盘点
+### 内容盘点
 
 - 项目原创 Java 源码、测试、构建脚本、CI、翻译与文档纳入 LGPL 范围。
 - 迁移时仓库只有 `assets/branding/echo-companion-logo-source.png` 与 `assets/branding/echo-companion-logo-512.png` 两个媒体文件，均为品牌 Logo，不归入默认 CC 范围；固定哈希与嵌入式 C2PA 来源证据见 `ASSET_LICENSES.md`。
@@ -17,7 +28,7 @@
 - Gradle Wrapper 保留 Apache-2.0；外部构建、测试与运行依赖不打入发布 JAR，并记录在 `THIRD_PARTY_NOTICES.md`。
 - 未发现从 Verity、ARR 或其他第三方项目复制进仓库的代码或媒体。
 
-## 自动化门禁
+### 自动化门禁
 
 迁移加入以下可重复检查：
 
@@ -27,7 +38,7 @@
 4. 核对两个最终发布 JAR 各包含且仅包含一份项目 LGPL、CC、许可证政策和第三方声明，并与仓库文件逐字节一致。
 5. 核对发布 JAR 的 Manifest 许可证标识，并确认没有旧的模糊 `META-INF/LICENSE-echo-companion` 路径。
 
-## 验证结果
+### 验证结果
 
 验证日期：2026-08-28；环境为 Windows 11、Oracle JDK `21.0.8`、Gradle Wrapper `8.14.1`。
 
